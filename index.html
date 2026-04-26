@@ -259,24 +259,24 @@
         window.addEventListener('resize', () => resizeCanvas());
         startMandala();
 
-        // ------------------- АВТОМАТИЧЕСКОЕ ПОЛУЧЕНИЕ USER ID (без ручного ввода) -------------------
+        // ------------------- АВТОМАТИЧЕСКОЕ ПОЛУЧЕНИЕ USER ID (без ошибок) -------------------
         let userId = null;
 
-        // Пытаемся получить ID из Telegram WebApp (работает только внутри Telegram)
-        if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
-            userId = window.Telegram.WebApp.initDataUnsafe.user.id;
+        // Ждём загрузки Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            const webapp = window.Telegram.WebApp;
+            webapp.ready();
+            webapp.expand();
+            if (webapp.initDataUnsafe && webapp.initDataUnsafe.user) {
+                userId = webapp.initDataUnsafe.user.id;
+            }
         }
 
-        // Если ID не получен (приложение открыто не в Telegram) — показываем ошибку и не даём оплатить
+        // Если всё равно нет ID (например, в браузере) — просто логируем, но не блокируем
         if (!userId) {
-            alert('❌ Приложение должно быть открыто внутри Telegram!\n\nПожалуйста, запустите его через бота: @tochka_opory_bot');
-            // Блокируем все дальнейшие действия, связанные с оплатой
-            const donateBtn = document.getElementById('donateBtn');
-            if (donateBtn) {
-                donateBtn.disabled = true;
-                donateBtn.style.opacity = '0.5';
-                donateBtn.style.cursor = 'not-allowed';
-            }
+            console.log('Telegram WebApp не обнаружен, работа в режиме без ID (только для теста интерфейса)');
+            // Для теста можно установить заглушку, но не блокируем
+            userId = 'test_user_123';
         }
 
         // ------------------- НАСТРОЙКИ -------------------
@@ -317,7 +317,7 @@
         }
 
         // ------------------- ПРОВЕРКА СТАТУСА НА СЕРВЕРЕ -------------------
-        if (userId && !purchased.key2) {
+        if (userId && userId !== 'test_user_123' && !purchased.key2) {
             fetch(`${SERVER_URL}/check-key.php?user_id=${userId}&key_id=key2`)
                 .then(res => res.json())
                 .then(data => {
@@ -332,8 +332,9 @@
 
         // ------------------- ФУНКЦИЯ СОЗДАНИЯ ПЛАТЕЖА -------------------
         function createPayment(keyId, amount) {
-            if (!userId) {
-                alert('❌ Оплата возможна только из приложения, открытого в Telegram.\n\nПожалуйста, запустите приложение через бота: @tochka_opory_bot');
+            // Если это тестовый ID, показываем сообщение, но не блокируем оплату
+            if (userId === 'test_user_123') {
+                alert('Тестовый режим. Для реальной оплаты откройте приложение в Telegram.');
                 return;
             }
             
@@ -586,11 +587,6 @@
         });
 
         updateKey2StatusUI();
-
-        if (window.Telegram?.WebApp) {
-            window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand();
-        }
     </script>
 </body>
 </html>
