@@ -1,12 +1,12 @@
 <?php
 header('Content-Type: application/json');
 
-$shopId = 'ВАШ_shopId_ИЗ_ЮKASSA';
-$secretKey = 'ВАШ_secretKey_ИЗ_ЮKASSA';
+$shopId = '1325944';
+$secretKey = 'live_aqVk0DV3uZJB-93qWKSrexuvbTBj_gVD37tCcCTCzBs';
 
 $input = json_decode(file_get_contents('php://input'), true);
 $keyId = $input['keyId'];
-$amount = $input['amount'];
+$amount = $input['890'];
 $userId = $input['userId'] ?? null;
 
 $idempotenceKey = uniqid();
