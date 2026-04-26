@@ -17,7 +17,6 @@
             overflow-x: hidden;
         }
 
-        /* АНИМИРОВАННАЯ МАНДАЛА НА ФОНЕ */
         .mandala-canvas {
             position: fixed;
             top: 0;
@@ -62,6 +61,7 @@
         .status-badge { font-size: 11px; margin-top: 6px; font-weight: 400; }
         .status-open { color: #8BAA6E; }
         .status-closed { color: #C6A43B; }
+        .status-soon { color: #B29A64; }
 
         .btn-buy-all {
             background: linear-gradient(135deg, #C6A43B 0%, #E8D194 100%);
@@ -187,17 +187,17 @@
                 <div class="key-card" data-key="key2">
                     <div class="key-number">КЛЮЧ 2</div>
                     <div class="key-name">Золотое сияние</div>
-                    <div class="status-badge status-closed" id="key2Status">🔒 закрыт доступ</div>
+                    <div class="status-badge" id="key2Status">🔒 закрыт доступ</div>
                 </div>
                 <div class="key-card" data-key="key3">
                     <div class="key-number">КЛЮЧ 3</div>
                     <div class="key-name">Искусство быть</div>
-                    <div class="status-badge status-closed">🔒 закрыт доступ</div>
+                    <div class="status-badge status-soon">🔄 скоро</div>
                 </div>
                 <div class="key-card" data-key="key4">
                     <div class="key-number">КЛЮЧ 4</div>
                     <div class="key-name">Субстрат жизненности</div>
-                    <div class="status-badge status-closed">🔒 закрыт доступ</div>
+                    <div class="status-badge status-soon">🔄 скоро</div>
                 </div>
             </div>
             
@@ -216,9 +216,6 @@
             all: 'https://yookassa.ru/my/i/ad9xtOaiz_Za/l',
             donate: 'https://yookassa.ru/my/i/ae5KXioatIqn/l'
         };
-
-        // ТЕСТОВЫЙ РЕЖИМ: true — донат открывает КЛЮЧ 2 (без реальной оплаты)
-        const false = true;
 
         // ------------------- АУДИОФАЙЛЫ -------------------
         const AUDIO_URLS = {
@@ -265,7 +262,6 @@
             ctx.fillStyle = grad;
             ctx.lineWidth = 2.2;
             
-            // Центральная классическая мандала
             for (let i = 0; i < 12; i++) {
                 const rad = (i / 12) * Math.PI * 2;
                 ctx.beginPath();
@@ -313,6 +309,15 @@
             key4: false
         };
 
+        // Загружаем сохранённые статусы
+        const saved = localStorage.getItem('purchased');
+        if (saved) {
+            try {
+                const savedPurchased = JSON.parse(saved);
+                purchased = { ...purchased, ...savedPurchased };
+            } catch(e) {}
+        }
+
         function updateKey2StatusUI() {
             const statusSpan = document.getElementById('key2Status');
             if (statusSpan) {
@@ -324,45 +329,45 @@
                     statusSpan.className = 'status-badge status-closed';
                 }
             }
-            // Обновляем карточку ключа 2 на главной
-            const key2Card = document.querySelector('.key-card[data-key="key2"] .status-badge');
-            if (key2Card) {
-                if (purchased.key2) {
-                    key2Card.innerHTML = '✓ открыт доступ';
-                    key2Card.className = 'status-badge status-open';
-                } else {
-                    key2Card.innerHTML = '🔒 закрыт доступ';
-                    key2Card.className = 'status-badge status-closed';
-                }
+        }
+
+        function savePurchased() {
+            localStorage.setItem('purchased', JSON.stringify(purchased));
+            updateKey2StatusUI();
+        }
+
+        // Функция открытия ссылки оплаты
+        function openPaymentLink(url, isDonate = false) {
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.openLink(url);
+            } else {
+                window.open(url, '_blank');
             }
         }
 
-        // Функция для открытия КЛЮЧА 2 (тестовый режим)
+        // Функция для открытия КЛЮЧА 2 (вызывается после подтверждения оплаты)
         function unlockKey2() {
             purchased.key2 = true;
-            updateKey2StatusUI();
-            // Сохраняем в localStorage
-            localStorage.setItem('purchased', JSON.stringify(purchased));
-            alert('✨ В тестовом режиме КЛЮЧ 2 открыт! Теперь он доступен для прослушивания.');
-            // Обновляем отображение на главной
-            if (window.renderKeysGrid) window.renderKeysGrid();
+            savePurchased();
+            alert('✨ КЛЮЧ 2 открыт! Благодарим за поддержку.');
         }
 
-        // Функция открытия ссылки оплаты (для доната и покупок)
-        function openPaymentLink(url, isDonate = false) {
-            if (TEST_MODE && isDonate) {
-                // Тестовый режим: донат открывает КЛЮЧ 2
-                unlockKey2();
-            } else {
-                if (window.Telegram?.WebApp) {
-                    window.Telegram.WebApp.openLink(url);
-                } else {
-                    window.open(url, '_blank');
-                }
-            }
+        // Проверка статуса ключа 2 при загрузке (если есть userId и сервер)
+        const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+        if (userId && !purchased.key2) {
+            fetch(`https://tochka-opory.ct.ws/check-key.php?user_id=${userId}&key_id=key2`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.open) {
+                        purchased.key2 = true;
+                        savePurchased();
+                        alert('КЛЮЧ 2 открыт! Спасибо за покупку.');
+                    }
+                })
+                .catch(err => console.log('Ошибка проверки ключа', err));
         }
 
-        // ------------------- ОСНОВНАЯ ЛОГИКА ПРИЛОЖЕНИЯ -------------------
+        // ------------------- ОСНОВНАЯ ЛОГИКА -------------------
         const FREE_STEPS = [
             { type: "welcome" },
             { type: "audio", id: "setup", title: "🎧 Настройка (3 минуты)", desc: "Слушайте перед медитацией.", audioKey: "setup", nextText: "ДАЛЕЕ" },
@@ -460,15 +465,23 @@
             isPlaying = false;
         }
 
-        function showPurchaseScreen(keyId, price, paymentUrl) {
-            const keyNames = {
-                key2: 'КЛЮЧ 2 · Золотое сияние',
-                key3: 'КЛЮЧ 3 · Искусство быть',
-                key4: 'КЛЮЧ 4 · Субстрат жизненности'
-            };
+        function showSoonScreen(keyName) {
             dynamicDiv.innerHTML = `
                 <div class="meditation-card">
-                    <div class="med-title">🔒 ${keyNames[keyId]}</div>
+                    <div class="med-title">🔄 ${keyName}</div>
+                    <div class="med-sub">Медитация готовится и скоро появится. Следите за обновлениями!</div>
+                    <button id="closeSoon" class="back-home">← на главную</button>
+                </div>
+            `;
+            document.getElementById('closeSoon')?.addEventListener('click', showHome);
+            homeDiv.classList.add('hidden');
+            dynamicDiv.classList.remove('hidden');
+        }
+
+        function showPurchaseScreen(keyId, price, paymentUrl) {
+            dynamicDiv.innerHTML = `
+                <div class="meditation-card">
+                    <div class="med-title">🔒 КЛЮЧ ${keyId.slice(-1)}. ${keyId === 'key2' ? 'Золотое сияние' : ''}</div>
                     <div class="med-sub">Доступ к этой практике закрыт. Вы можете открыть его за ${price} ₽</div>
                     <button id="buyBtn" class="btn-audio">💳 Купить за ${price} ₽</button>
                     <button id="closeLocked" class="back-home">← на главную</button>
@@ -487,16 +500,14 @@
                 renderStep();
             } else if (keyId === 'key2') {
                 if (purchased.key2) {
-                    currentStep = 0;
-                    stepHistory = [];
-                    renderStep();
+                    showSoonScreen('КЛЮЧ 2 · Золотое сияние');
                 } else {
                     showPurchaseScreen('key2', '890 ₽', PAYMENT_LINKS.key2);
                 }
             } else if (keyId === 'key3') {
-                showPurchaseScreen('key3', '1390 ₽', PAYMENT_LINKS.key3);
+                showSoonScreen('КЛЮЧ 3 · Искусство быть');
             } else if (keyId === 'key4') {
-                showPurchaseScreen('key4', '1890 ₽', PAYMENT_LINKS.key4);
+                showSoonScreen('КЛЮЧ 4 · Субстрат жизненности');
             }
         }
 
@@ -588,7 +599,7 @@
             }
         }
 
-        // ------------------- НАЗНАЧЕНИЕ ОБРАБОТЧИКОВ -------------------
+        // ------------------- ОБРАБОТЧИКИ КНОПОК -------------------
         document.querySelectorAll('.key-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 const keyId = card.dataset.key;
@@ -604,15 +615,7 @@
             openPaymentLink(PAYMENT_LINKS.donate, true);
         });
 
-        // Восстанавливаем статусы из localStorage
-        const saved = localStorage.getItem('purchased');
-        if (saved) {
-            try {
-                const savedPurchased = JSON.parse(saved);
-                purchased = { ...purchased, ...savedPurchased };
-                updateKey2StatusUI();
-            } catch(e) {}
-        }
+        updateKey2StatusUI();
 
         if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.ready();
