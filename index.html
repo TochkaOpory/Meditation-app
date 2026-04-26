@@ -30,6 +30,21 @@
         .brand { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 600; background: linear-gradient(135deg, #C6A43B 0%, #E8D194 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .tagline { font-size: 14px; color: #A18C68; margin-top: 6px; font-style: italic; }
 
+        .btn-buy-all {
+            background: linear-gradient(135deg, #C6A43B 0%, #E8D194 100%);
+            border: none;
+            color: #2C2B28;
+            font-weight: 700;
+            padding: 14px 20px;
+            border-radius: 60px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0 20px;
+            transition: 0.2s;
+        }
+        .btn-buy-all:hover { transform: scale(0.98); opacity: 0.9; }
+
         .grid-2x2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -153,6 +168,8 @@
             <div class="tagline">«Не волшебная таблетка, но близко»</div>
         </div>
         <div id="homeScreen">
+            <button id="buyAllBtn" class="btn-buy-all">🎁 Купить все ключи (2+3+4) — 2990 ₽</button>
+            
             <div class="grid-2x2">
                 <div class="key-card" data-key="key1">
                     <div class="key-number">КЛЮЧ 1</div>
@@ -259,25 +276,52 @@
         window.addEventListener('resize', () => resizeCanvas());
         startMandala();
 
-        // ------------------- АВТОМАТИЧЕСКОЕ ПОЛУЧЕНИЕ USER ID (без ошибок) -------------------
+        // ------------------- ОПРЕДЕЛЕНИЕ USER ID (РАБОТАЕТ В TELEGRAM) -------------------
         let userId = null;
-
-        // Ждём загрузки Telegram WebApp
-        if (window.Telegram && window.Telegram.WebApp) {
-            const webapp = window.Telegram.WebApp;
-            webapp.ready();
-            webapp.expand();
-            if (webapp.initDataUnsafe && webapp.initDataUnsafe.user) {
-                userId = webapp.initDataUnsafe.user.id;
+        
+        // Функция для получения ID с повторной попыткой
+        function getTelegramUserId(callback) {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const webapp = window.Telegram.WebApp;
+                webapp.ready();
+                webapp.expand();
+                if (webapp.initDataUnsafe && webapp.initDataUnsafe.user) {
+                    callback(webapp.initDataUnsafe.user.id);
+                    return;
+                }
             }
+            // Если не получилось, пробуем ещё раз через 100 мс
+            setTimeout(() => {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                    callback(window.Telegram.WebApp.initDataUnsafe.user.id);
+                } else {
+                    callback(null);
+                }
+            }, 100);
         }
-
-        // Если всё равно нет ID (например, в браузере) — просто логируем, но не блокируем
-        if (!userId) {
-            console.log('Telegram WebApp не обнаружен, работа в режиме без ID (только для теста интерфейса)');
-            // Для теста можно установить заглушку, но не блокируем
-            userId = 'test_user_123';
-        }
+        
+        // Получаем ID и сохраняем
+        getTelegramUserId(function(id) {
+            userId = id;
+            if (!userId) {
+                console.log('Telegram ID не получен. Приложение работает в демо-режиме (оплата недоступна).');
+            } else {
+                console.log('Telegram ID получен:', userId);
+                // После получения ID проверяем статус ключа на сервере
+                if (!purchased.key2) {
+                    fetch(`${SERVER_URL}/check-key.php?user_id=${userId}&key_id=key2`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.open) {
+                                purchased.key2 = true;
+                                savePurchased();
+                                alert('КЛЮЧ 2 открыт! Спасибо за покупку.');
+                            }
+                        })
+                        .catch(err => console.log('Ошибка проверки ключа', err));
+                }
+            }
+        });
 
         // ------------------- НАСТРОЙКИ -------------------
         const SERVER_URL = 'https://tochka-opory.ct.ws';
@@ -316,25 +360,10 @@
             }
         }
 
-        // ------------------- ПРОВЕРКА СТАТУСА НА СЕРВЕРЕ -------------------
-        if (userId && userId !== 'test_user_123' && !purchased.key2) {
-            fetch(`${SERVER_URL}/check-key.php?user_id=${userId}&key_id=key2`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.open) {
-                        purchased.key2 = true;
-                        savePurchased();
-                        alert('КЛЮЧ 2 открыт! Спасибо за покупку.');
-                    }
-                })
-                .catch(err => console.log('Ошибка проверки ключа', err));
-        }
-
         // ------------------- ФУНКЦИЯ СОЗДАНИЯ ПЛАТЕЖА -------------------
-        function createPayment(keyId, amount) {
-            // Если это тестовый ID, показываем сообщение, но не блокируем оплату
-            if (userId === 'test_user_123') {
-                alert('Тестовый режим. Для реальной оплаты откройте приложение в Telegram.');
+        function createPayment(keyId, amount, isDonate = false) {
+            if (!userId) {
+                alert('Не удалось определить ваш Telegram ID.\n\nПожалуйста, убедитесь, что приложение открыто внутри Telegram, и попробуйте снова.');
                 return;
             }
             
@@ -357,7 +386,7 @@
             });
         }
 
-        // ------------------- ОСНОВНАЯ ЛОГИКА (без изменений) -------------------
+        // ------------------- ОСНОВНАЯ ЛОГИКА -------------------
         const FREE_STEPS = [
             { type: "welcome" },
             { type: "audio", id: "setup", title: "🎧 Настройка (3 минуты)", desc: "Слушайте перед медитацией.", audioKey: "setup", nextText: "ДАЛЕЕ" },
@@ -582,8 +611,12 @@
             });
         });
 
+        document.getElementById('buyAllBtn')?.addEventListener('click', () => {
+            createPayment('all', 2990);
+        });
+
         document.getElementById('donateBtn')?.addEventListener('click', () => {
-            createPayment('key2', 890);
+            createPayment('donate', 890);
         });
 
         updateKey2StatusUI();
