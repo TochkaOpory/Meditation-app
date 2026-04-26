@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Точка опоры | Медитации</title>
+    <title>Точка опоры | Не волшебная таблетка, но близко</title>
     <style>
         * {
             margin: 0;
@@ -15,17 +15,16 @@
             background: #0a1612;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
             color: #fff;
-            padding: 20px 16px 30px;
+            padding: 20px 16px 40px;
             min-height: 100vh;
         }
 
-        /* главный контейнер */
-        .app-container {
-            max-width: 500px;
+        .container {
+            max-width: 600px;
             margin: 0 auto;
         }
 
-        /* хидер */
+        /* шапка */
         .header {
             text-align: center;
             margin-bottom: 32px;
@@ -40,7 +39,6 @@
         .app-title {
             font-size: 28px;
             font-weight: 700;
-            letter-spacing: -0.3px;
             background: linear-gradient(135deg, #d4af37 0%, #f5e79a 100%);
             -webkit-background-clip: text;
             background-clip: text;
@@ -53,45 +51,28 @@
             margin-top: 6px;
         }
 
-        /* карточка */
+        /* карточки */
         .card {
             background: #0f1f1a;
             border-radius: 24px;
             padding: 20px;
             margin-bottom: 16px;
             border: 1px solid rgba(212, 175, 55, 0.15);
-            transition: all 0.2s ease;
         }
 
-        /* карточка активной медитации */
         .card-active {
             border: 1px solid #d4af37;
             background: #14261f;
-            box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.3);
         }
 
-        .meditation-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .step-title {
+            font-size: 18px;
+            font-weight: 600;
             margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-
-        .meditation-title {
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .meditation-duration {
-            font-size: 13px;
-            background: rgba(212, 175, 55, 0.2);
-            padding: 4px 10px;
-            border-radius: 20px;
             color: #d4af37;
         }
 
-        .meditation-desc {
+        .step-description {
             font-size: 14px;
             color: rgba(255,255,255,0.7);
             margin-bottom: 16px;
@@ -99,71 +80,89 @@
         }
 
         /* кнопки */
-        .btn-play {
+        .btn {
             background: #d4af37;
             border: none;
             color: #0a1612;
             font-weight: 600;
-            padding: 10px 0;
+            padding: 12px 0;
             width: 100%;
             border-radius: 40px;
             font-size: 15px;
             cursor: pointer;
             transition: all 0.2s;
             margin-bottom: 8px;
+            text-align: center;
         }
 
-        .btn-play:hover {
-            background: #f5d543;
-            transform: scale(0.98);
-        }
-
-        .btn-next {
+        .btn-secondary {
             background: transparent;
             border: 1px solid rgba(212, 175, 55, 0.5);
             color: #d4af37;
-            padding: 8px 0;
-            border-radius: 40px;
-            font-size: 14px;
-            cursor: pointer;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0 10px;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+            margin-bottom: 0;
         }
 
         /* плеер */
         .player-section {
             background: #0b1a15;
-            border-radius: 32px;
-            padding: 20px;
+            border-radius: 28px;
+            padding: 16px;
             margin: 20px 0;
             border: 1px solid rgba(212, 175, 55, 0.2);
         }
 
         .now-playing {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
         }
 
         .now-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: #d4af37;
         }
 
-        .now-status {
-            font-size: 12px;
-            color: rgba(255,255,255,0.5);
-            margin-top: 4px;
+        .speed-control {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 12px 0 8px;
+            flex-wrap: wrap;
+        }
+
+        .speed-btn {
+            background: #1e2e28;
+            border: none;
+            color: #fff;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .speed-btn.active {
+            background: #d4af37;
+            color: #0a1612;
         }
 
         audio {
             width: 100%;
             margin: 10px 0;
+            border-radius: 40px;
         }
 
-        audio::-webkit-media-controls-panel {
-            background-color: #14261f;
-        }
-
-        /* трекер прогресса */
+        /* прогресс-бары */
         .progress-section {
             margin: 24px 0 20px;
         }
@@ -191,42 +190,32 @@
             transition: width 0.3s;
         }
 
-        /* бонус-трекер */
-        .bonus-tracker {
-            background: #0b1a15;
+        /* трекер */
+        .tracker {
+            background: #0f1f1a;
             border-radius: 20px;
             padding: 16px;
-            margin-top: 16px;
+            margin-top: 20px;
         }
 
-        .bonus-title {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .days-grid {
+        .tracker-days {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
-            margin-top: 12px;
+            margin: 12px 0;
+            justify-content: space-between;
         }
 
         .day-circle {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             background: #1e2e28;
             border-radius: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 13px;
-            font-weight: 500;
-            color: rgba(255,255,255,0.6);
-            transition: all 0.2s;
+            cursor: pointer;
         }
 
         .day-circle.completed {
@@ -234,50 +223,71 @@
             color: #0a1612;
         }
 
-        .btn-reset {
-            background: none;
-            border: 1px solid rgba(255,255,255,0.2);
-            color: rgba(255,255,255,0.5);
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 12px;
-            margin-top: 12px;
-            width: 100%;
-            cursor: pointer;
+        .offer-card {
+            background: linear-gradient(135deg, #14261f 0%, #0a1612 100%);
+            border: 1px solid #d4af37;
+            margin-top: 20px;
+        }
+
+        .price {
+            font-size: 24px;
+            font-weight: 700;
+            color: #d4af37;
+        }
+
+        .old-price {
+            font-size: 16px;
+            text-decoration: line-through;
+            color: rgba(255,255,255,0.4);
+            margin-left: 10px;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: 0.5px solid rgba(212,175,55,0.2);
         }
 
         .note {
             font-size: 11px;
             color: rgba(255,255,255,0.35);
             text-align: center;
-            margin-top: 24px;
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-<div class="app-container">
+<div class="container" id="app">
     <div class="header">
         <div class="logo-icon">🧘</div>
         <div class="app-title">Точка опоры</div>
         <div class="app-subtitle">«Не волшебная таблетка, но близко»</div>
     </div>
 
-    <!-- ПЛЕЕР -->
+    <!-- Главный шаг: отображение активной карточки -->
+    <div id="stepContainer"></div>
+
+    <!-- Аудиоплеер -->
     <div class="player-section" id="playerSection">
         <div class="now-playing">
-            <div class="now-title" id="nowPlayingTitle">5 врат</div>
-            <div class="now-status" id="nowPlayingStatus">Нажмите ▶ чтобы начать</div>
+            <div class="now-title" id="nowTitle">Не выбрано</div>
         </div>
         <audio id="audioPlayer" controls preload="metadata">
             <source id="audioSource" src="" type="audio/mpeg">
-            Ваш браузер не поддерживает аудио.
         </audio>
+        <div class="speed-control" id="speedControl">
+            <button class="speed-btn" data-speed="0.75">0.75x</button>
+            <button class="speed-btn active" data-speed="1">1x</button>
+            <button class="speed-btn" data-speed="1.25">1.25x</button>
+            <button class="speed-btn" data-speed="1.5">1.5x</button>
+            <button class="speed-btn" data-speed="2">2x</button>
+        </div>
     </div>
 
-    <!-- СПИСОК МЕДИТАЦИЙ (4 ключа) -->
-    <div id="meditationList"></div>
-
-    <!-- ПРОГРЕСС ПО ПРАКТИКЕ -->
+    <!-- Прогресс -->
     <div class="progress-section">
         <div class="progress-header">
             <span>📊 Прогресс практики</span>
@@ -288,26 +298,207 @@
         </div>
     </div>
 
-    <!-- БОНУС-ТРЕКЕР: КАЛЕНДАРЬ МЕДИТАЦИЙ -->
-    <div class="card">
-        <div class="bonus-tracker">
-            <div class="bonus-title">
-                <span>📅</span> Календарь осознанности
-            </div>
-            <div class="days-grid" id="daysGrid"></div>
-            <button class="btn-reset" id="resetTrackerBtn">Сбросить трекер</button>
-            <div class="note" style="margin-top: 12px;">отмечайте день после прослушивания любой медитации</div>
-        </div>
+    <!-- Трекер -->
+    <div class="tracker">
+        <div style="font-weight:600; margin-bottom:8px;">📅 Календарь практики</div>
+        <div class="tracker-days" id="trackerDays"></div>
+        <div class="note">✔ Отмечайте день после прослушивания любой медитации</div>
     </div>
-    <div class="note">⚡ Точка опоры — система практик для устойчивости в быту, душе и социуме</div>
 </div>
-<script src="meditations.js"></script>
-<script src="app.js"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <script>
-  var tg = window.Telegram.WebApp;
-  tg.ready();
-  tg.expand(); // Разворачивает приложение на весь экран
+    // ========== ДАННЫЕ ==========
+    const STORAGE_KEY = "meditation_progress";
+    const TRACKER_KEY = "meditation_tracker";
+
+    // Шаги (бесплатная часть)
+    const STEPS = [
+        { id: "welcome", type: "welcome" },
+        { id: "setup", type: "audio", title: "🎧 Настройка (3 минуты)", desc: "Слушайте перед медитацией.", audioUrl: "https://cloud.mail.ru/public/g4fW/acm1UUMAd", nextText: "ДАЛЕЕ" },
+        { id: "key1", type: "audio", title: "🔑 Ключ №1 (10 минут)", desc: "Наденьте наушники. Закройте глаза. Дышите свободно.", audioUrl: "https://cloud.mail.ru/public/7JWi/aAPoShVXp", nextText: "ДАЛЕЕ → интеграция" },
+        { id: "integration", type: "audio", title: "🧩 Интеграция (7 минут)", desc: "Закрепите состояние. Наденьте наушники, закройте глаза.", audioUrl: "https://cloud.mail.ru/public/ktir/dkuVVtU4B", nextText: "ДАЛЕЕ" },
+        { id: "three_steps", type: "steps", nextText: "КЛЮЧИ" },
+        { id: "offer", type: "offer" }
+    ];
+
+    // продающее сообщение
+    const OFFER_TEXT = {
+        keys: [
+            { name: "✨ Ключ 2. «Золотое сияние» (25 мин)", price: "890 ₽", desc: "Возвращает лёгкость в бытовые дела." },
+            { name: "🧘 Ключ 3. «Искусство быть» (30 мин)", price: "1390 ₽", desc: "Восстанавливает контакт с собой." },
+            { name: "🌱 Ключ 4. «Субстрат жизненности» (28 мин)", price: "1890 ₽", desc: "Убирает социальное напряжение." }
+        ],
+        bundle: { name: "Все три ключа (2+3+4)", price: "2990 ₽", oldPrice: "4170 ₽", desc: "Экономия 1480 ₽" }
+    };
+
+    let currentStepIndex = 0;
+
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    function getProgress() {
+        const defaultProgress = { completed: [] };
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return defaultProgress;
+        try { return JSON.parse(saved); } catch(e) { return defaultProgress; }
+    }
+
+    function saveProgress(progress) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+        updateProgressUI();
+    }
+
+    function updateProgressUI() {
+        const total = STEPS.filter(s => s.type === "audio").length;
+        const completed = getProgress().completed.length;
+        const percent = Math.round((completed / total) * 100);
+        document.getElementById("progressPercent").innerText = `${percent}%`;
+        document.getElementById("progressFill").style.width = `${percent}%`;
+    }
+
+    function markAudioCompleted(stepId) {
+        const progress = getProgress();
+        if (!progress.completed.includes(stepId)) {
+            progress.completed.push(stepId);
+            saveProgress(progress);
+        }
+    }
+
+    // трекер
+    function renderTracker() {
+        const tracker = JSON.parse(localStorage.getItem(TRACKER_KEY) || '{"dates":[]}');
+        const today = new Date().toISOString().split('T')[0];
+        const days = [];
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const ds = d.toISOString().split('T')[0];
+            days.push(ds);
+        }
+        const container = document.getElementById("trackerDays");
+        if (!container) return;
+        container.innerHTML = days.map(d => `<div class="day-circle ${tracker.dates.includes(d) ? 'completed' : ''}" data-date="${d}">${new Date(d).getDate()}</div>`).join("");
+        document.querySelectorAll(".day-circle[data-date]").forEach(el => {
+            el.addEventListener("click", () => {
+                const date = el.dataset.date;
+                if (date === today) markToday();
+            });
+        });
+    }
+
+    function markToday() {
+        const today = new Date().toISOString().split('T')[0];
+        const tracker = JSON.parse(localStorage.getItem(TRACKER_KEY) || '{"dates":[]}');
+        if (!tracker.dates.includes(today)) {
+            tracker.dates.push(today);
+            localStorage.setItem(TRACKER_KEY, JSON.stringify(tracker));
+            renderTracker();
+        }
+    }
+
+    // плеер
+    function playAudio(url, title) {
+        const audio = document.getElementById("audioPlayer");
+        const source = document.getElementById("audioSource");
+        const nowTitle = document.getElementById("nowTitle");
+        if (!audio || !source) return;
+        source.src = url;
+        audio.load();
+        audio.play().catch(e => console.log("автоплей заблокирован"));
+        if (nowTitle) nowTitle.innerText = title;
+    }
+
+    function initSpeedControl() {
+        const audio = document.getElementById("audioPlayer");
+        document.querySelectorAll(".speed-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const speed = parseFloat(btn.dataset.speed);
+                audio.playbackRate = speed;
+                document.querySelectorAll(".speed-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+            });
+        });
+    }
+
+    // рендер шага
+    function renderStep() {
+        const step = STEPS[currentStepIndex];
+        const container = document.getElementById("stepContainer");
+        if (!container) return;
+
+        if (step.type === "welcome") {
+            container.innerHTML = `
+                <div class="card">
+                    <div class="step-title">👋 Здравствуйте. Меня зовут Михаил</div>
+                    <div class="step-description">Я основатель школы Точка опоры. Вы выбрали название «Не волшебная таблетка, но близко» — значит, цените честность. Я не буду говорить, что вы всё бросите и улетите.</div>
+                    <div class="step-description"><strong>Что получите:</strong><br>🎧 3 мин — настройка<br>🎧 10 мин — Ключ №1<br>🎧 7 мин — интеграция<br>🎁 Бонус — подкаст «5 врат»<br>📝 3 шага к почти волшебству</div>
+                    <div class="btn" id="welcomeBtn">ДА</div>
+                </div>
+            `;
+            document.getElementById("welcomeBtn")?.addEventListener("click", () => { currentStepIndex++; renderStep(); });
+            return;
+        }
+
+        if (step.type === "audio") {
+            container.innerHTML = `
+                <div class="card">
+                    <div class="step-title">${step.title}</div>
+                    <div class="step-description">${step.desc}</div>
+                    <div class="btn" id="playBtn">▶ Слушать</div>
+                    <div class="btn btn-secondary" id="nextBtn">${step.nextText}</div>
+                </div>
+            `;
+            document.getElementById("playBtn")?.addEventListener("click", () => {
+                playAudio(step.audioUrl, step.title);
+                markAudioCompleted(step.id);
+            });
+            document.getElementById("nextBtn")?.addEventListener("click", () => {
+                if (currentStepIndex + 1 < STEPS.length) { currentStepIndex++; renderStep(); }
+                else { renderStep(); }
+            });
+            return;
+        }
+
+        if (step.type === "steps") {
+            container.innerHTML = `
+                <div class="card">
+                    <div class="step-title">📝 Три шага к почти волшебству</div>
+                    <div class="step-description">1. Запишите одно ощущение, которое появилось во время или после практики.<br>2. Спросите: «Что я могу сделать прямо сейчас, чтобы продлить это состояние?» — и сделайте.<br>3. Ваш бонус: подкаст «5 врат медитации» — о том, какие уровни открывает регулярная практика.</div>
+                    <div class="btn" id="bonusBtn">🎁 Забрать бонус-подкаст</div>
+                    <div class="btn btn-secondary" id="nextStepsBtn">${step.nextText}</div>
+                </div>
+            `;
+            document.getElementById("bonusBtn")?.addEventListener("click", () => {
+                playAudio("https://cloud.mail.ru/public/wUsp/HjvUEmGSD", "🎁 5 врат медитации (подкаст)");
+            });
+            document.getElementById("nextStepsBtn")?.addEventListener("click", () => { currentStepIndex++; renderStep(); });
+            return;
+        }
+
+        if (step.type === "offer") {
+            let html = `<div class="card offer-card"><div class="step-title">🔑 Остальные 3 ключа</div><div class="step-description">Вы уже получили Ключ №1 бесплатно. Теперь решать вам: идти глубже или нет.</div><div class="step-description"><strong>Вариант А. По одному:</strong></div>`;
+            OFFER_TEXT.keys.forEach(k => { html += `<div class="step-description">• ${k.name} — ${k.price}<br>${k.desc}</div>`; });
+            html += `<div class="step-description"><strong>Вариант Б. Все три ключа:</strong><br>💰 ${OFFER_TEXT.bundle.name} — ${OFFER_TEXT.bundle.price} <span class="old-price">${OFFER_TEXT.bundle.oldPrice}</span><br>Экономия 1480 ₽</div>`;
+            html += `<div class="step-description">Каждый ключ = аудиомедитация + текстовые шаги + картинки и аудиоподкасты.</div><div class="note">Платная версия временно отключена. Свяжитесь с @tochka_opory_bot для доступа.</div></div>`;
+            container.innerHTML = html;
+            return;
+        }
+    }
+
+    // запуск
+    function init() {
+        renderStep();
+        initSpeedControl();
+        renderTracker();
+        const savedProgress = getProgress();
+        if (savedProgress.completed.length === 0) {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+        updateProgressUI();
+        if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+    }
+    init();
 </script>
 </body>
 </html>
