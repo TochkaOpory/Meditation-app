@@ -276,10 +276,9 @@
         window.addEventListener('resize', () => resizeCanvas());
         startMandala();
 
-        // ------------------- АВТОМАТИЧЕСКОЕ ПОЛУЧЕНИЕ USER ID (БЕЗ РУЧНОГО ВВОДА) -------------------
+        // ------------------- АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ ID -------------------
         let userId = null;
         
-        // Функция для получения ID из Telegram WebApp
         function getTelegramUserId() {
             if (window.Telegram && window.Telegram.WebApp) {
                 const webapp = window.Telegram.WebApp;
@@ -289,56 +288,39 @@
                     userId = webapp.initDataUnsafe.user.id;
                     console.log('✅ Telegram ID получен:', userId);
                     return true;
-                } else if (webapp.initDataUnsafe && webapp.initDataUnsafe.query_id) {
-                    // Если пользователь не авторизован, но приложение открыто в Telegram
-                    console.log('⚠️ Пользователь не авторизован в боте, но приложение работает');
-                    // Создаём временный ID из query_id (только для теста)
-                    userId = 'temp_' + webapp.initDataUnsafe.query_id.substring(0, 10);
-                    return true;
                 }
             }
             return false;
         }
         
-        // Пытаемся получить ID несколько раз с задержкой
         let attempts = 0;
         function waitForUserId() {
             if (getTelegramUserId()) {
-                // ID получен — продолжаем загрузку приложения
                 startApp();
             } else if (attempts < 10) {
                 attempts++;
-                console.log(`⏳ Ожидание Telegram WebApp... попытка ${attempts}/10`);
+                console.log(`⏳ Ожидание ID... попытка ${attempts}/10`);
                 setTimeout(waitForUserId, 300);
             } else {
-                // Если не получилось, создаём специальное сообщение
-                console.error('⚠️ Не удалось получить Telegram ID');
-                showTelegramAuthError();
-            }
-        }
-        
-        function showTelegramAuthError() {
-            const homeDiv = document.getElementById('homeScreen');
-            const dynamicDiv = document.getElementById('dynamicPanel');
-            homeDiv.style.display = 'none';
-            dynamicDiv.classList.remove('hidden');
-            dynamicDiv.innerHTML = `
-                <div class="meditation-card">
-                    <div class="med-title">⚠️ Требуется авторизация в боте</div>
-                    <div class="med-sub">
-                        Для работы приложения необходимо начать диалог с ботом.<br><br>
-                        👇 Нажмите на кнопку ниже, чтобы открыть бота и нажать "Старт".
+                // ID не получен — показываем ошибку без ссылки на чужого бота
+                const homeDiv2 = document.getElementById('homeScreen');
+                const dynamicDiv2 = document.getElementById('dynamicPanel');
+                homeDiv2.style.display = 'none';
+                dynamicDiv2.classList.remove('hidden');
+                dynamicDiv2.innerHTML = `
+                    <div class="meditation-card">
+                        <div class="med-title">⚠️ Не удалось определить пользователя</div>
+                        <div class="med-sub">
+                            Приложение должно быть открыто через официального бота.<br><br>
+                            Пожалуйста, перезагрузите приложение и убедитесь, что вы открыли его через кнопку меню бота.
+                        </div>
+                        <button id="retryBtn" class="btn-audio">🔄 Перезагрузить</button>
                     </div>
-                    <button id="openBotBtn" class="btn-audio">📱 Открыть бота</button>
-                    <button id="retryBtn" class="btn-secondary" style="margin-top: 12px;">🔄 Перезагрузить</button>
-                </div>
-            `;
-            document.getElementById('openBotBtn')?.addEventListener('click', () => {
-                window.open('https://t.me/tochka_opory_bot', '_blank');
-            });
-            document.getElementById('retryBtn')?.addEventListener('click', () => {
-                window.location.reload();
-            });
+                `;
+                document.getElementById('retryBtn')?.addEventListener('click', () => {
+                    window.location.reload();
+                });
+            }
         }
         
         // ------------------- НАСТРОЙКИ -------------------
@@ -378,9 +360,8 @@
             }
         }
 
-        // ------------------- ПРОВЕРКА СТАТУСА НА СЕРВЕРЕ -------------------
         function checkKeyStatus() {
-            if (userId && !purchased.key2 && !userId.toString().startsWith('temp_')) {
+            if (userId && !purchased.key2) {
                 fetch(`${SERVER_URL}/check-key.php?user_id=${userId}&key_id=key2`)
                     .then(res => res.json())
                     .then(data => {
@@ -394,15 +375,9 @@
             }
         }
 
-        // ------------------- ФУНКЦИЯ СОЗДАНИЯ ПЛАТЕЖА -------------------
         function createPayment(keyId, amount) {
             if (!userId) {
-                alert('Не удалось определить ваш Telegram ID. Пожалуйста, перезагрузите приложение.');
-                return;
-            }
-            
-            if (userId.toString().startsWith('temp_')) {
-                alert('Пожалуйста, сначала нажмите "Старт" в боте @tochka_opory_bot, затем перезагрузите приложение.');
+                alert('Не удалось определить пользователя. Перезагрузите приложение.');
                 return;
             }
             
@@ -661,15 +636,10 @@
 
             updateKey2StatusUI();
             checkKeyStatus();
-            
-            // Показываем главный экран
             homeDiv.style.display = 'block';
         }
         
-        // Скрываем главный экран до получения ID
         homeDiv.style.display = 'none';
-        
-        // Запускаем ожидание ID
         waitForUserId();
     </script>
 </body>
