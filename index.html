@@ -259,20 +259,23 @@
         window.addEventListener('resize', () => resizeCanvas());
         startMandala();
 
-        // ------------------- ПОЛУЧЕНИЕ USER ID (ФИКС) -------------------
+        // ------------------- АВТОМАТИЧЕСКОЕ ПОЛУЧЕНИЕ USER ID (без ручного ввода) -------------------
         let userId = null;
 
+        // Пытаемся получить ID из Telegram WebApp (работает только внутри Telegram)
         if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
             userId = window.Telegram.WebApp.initDataUnsafe.user.id;
         }
 
+        // Если ID не получен (приложение открыто не в Telegram) — показываем ошибку и не даём оплатить
         if (!userId) {
-            userId = localStorage.getItem('test_user_id');
-            if (!userId) {
-                userId = prompt('Введите ваш Telegram ID (можно узнать у @userinfobot):');
-                if (userId) {
-                    localStorage.setItem('test_user_id', userId);
-                }
+            alert('❌ Приложение должно быть открыто внутри Telegram!\n\nПожалуйста, запустите его через бота: @tochka_opory_bot');
+            // Блокируем все дальнейшие действия, связанные с оплатой
+            const donateBtn = document.getElementById('donateBtn');
+            if (donateBtn) {
+                donateBtn.disabled = true;
+                donateBtn.style.opacity = '0.5';
+                donateBtn.style.cursor = 'not-allowed';
             }
         }
 
@@ -330,7 +333,7 @@
         // ------------------- ФУНКЦИЯ СОЗДАНИЯ ПЛАТЕЖА -------------------
         function createPayment(keyId, amount) {
             if (!userId) {
-                alert('Ошибка: идентификатор пользователя не определён. Откройте приложение в Telegram или введите ID вручную.');
+                alert('❌ Оплата возможна только из приложения, открытого в Telegram.\n\nПожалуйста, запустите приложение через бота: @tochka_opory_bot');
                 return;
             }
             
@@ -353,7 +356,7 @@
             });
         }
 
-        // ------------------- ОСНОВНАЯ ЛОГИКА -------------------
+        // ------------------- ОСНОВНАЯ ЛОГИКА (без изменений) -------------------
         const FREE_STEPS = [
             { type: "welcome" },
             { type: "audio", id: "setup", title: "🎧 Настройка (3 минуты)", desc: "Слушайте перед медитацией.", audioKey: "setup", nextText: "ДАЛЕЕ" },
