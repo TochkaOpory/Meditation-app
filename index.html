@@ -7,15 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #FEF9EF;
-            font-family: 'Inter', sans-serif;
-            color: #2C2B28;
-            min-height: 100vh;
-            padding: 24px 20px 60px;
-            position: relative;
-            overflow-x: hidden;
-        }
+        body { background: #FEF9EF; font-family: 'Inter', sans-serif; color: #2C2B28; min-height: 100vh; padding: 24px 20px 60px; position: relative; overflow-x: hidden; }
 
         .mandala-canvas {
             position: fixed;
@@ -62,21 +54,6 @@
         .status-open { color: #8BAA6E; }
         .status-closed { color: #C6A43B; }
         .status-soon { color: #B29A64; }
-
-        .btn-buy-all {
-            background: linear-gradient(135deg, #C6A43B 0%, #E8D194 100%);
-            border: none;
-            color: #2C2B28;
-            font-weight: 700;
-            padding: 14px 20px;
-            border-radius: 60px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-            margin: 10px 0 20px;
-            transition: 0.2s;
-        }
-        .btn-buy-all:hover { transform: scale(0.98); opacity: 0.9; }
 
         .btn-donate {
             background: transparent;
@@ -176,8 +153,6 @@
             <div class="tagline">«Не волшебная таблетка, но близко»</div>
         </div>
         <div id="homeScreen">
-            <button id="buyAllBtn" class="btn-buy-all">🎁 Купить все ключи (2+3+4) — 2990 ₽</button>
-            
             <div class="grid-2x2">
                 <div class="key-card" data-key="key1">
                     <div class="key-number">КЛЮЧ 1</div>
@@ -208,23 +183,6 @@
     </div>
 
     <script>
-        // ------------------- ПЛАТЁЖНЫЕ ССЫЛКИ ЮKASSA -------------------
-        const PAYMENT_LINKS = {
-            key2: 'https://yookassa.ru/my/i/ad9vEKdf3Zst/l',
-            key3: 'https://yookassa.ru/my/i/ad9xgq5_YtsG/l',
-            key4: 'https://yookassa.ru/my/i/ad9xoyn9Cesz/l',
-            all: 'https://yookassa.ru/my/i/ad9xtOaiz_Za/l',
-            donate: 'https://yookassa.ru/my/i/ae5KXioatIqn/l'
-        };
-
-        // ------------------- АУДИОФАЙЛЫ -------------------
-        const AUDIO_URLS = {
-            setup: "https://files.catbox.moe/qipf0o.mp3",
-            key1: "https://files.catbox.moe/udem2c.mp3",
-            integration: "https://files.catbox.moe/vmafp1.mp3",
-            bonus: "https://files.catbox.moe/mhz6kz.mp3"
-        };
-
         // ------------------- МАНДАЛА -------------------
         const canvas = document.getElementById('mandalaCanvas');
         let ctx = canvas.getContext('2d');
@@ -301,6 +259,9 @@
         window.addEventListener('resize', () => resizeCanvas());
         startMandala();
 
+        // ------------------- НАСТРОЙКИ -------------------
+        const SERVER_URL = 'https://tochka-opory.ct.ws';
+        
         // ------------------- СТАТУСЫ КЛЮЧЕЙ -------------------
         let purchased = {
             key1: true,
@@ -309,13 +270,17 @@
             key4: false
         };
 
-        // Загружаем сохранённые статусы
         const saved = localStorage.getItem('purchased');
         if (saved) {
             try {
                 const savedPurchased = JSON.parse(saved);
                 purchased = { ...purchased, ...savedPurchased };
             } catch(e) {}
+        }
+
+        function savePurchased() {
+            localStorage.setItem('purchased', JSON.stringify(purchased));
+            updateKey2StatusUI();
         }
 
         function updateKey2StatusUI() {
@@ -331,31 +296,10 @@
             }
         }
 
-        function savePurchased() {
-            localStorage.setItem('purchased', JSON.stringify(purchased));
-            updateKey2StatusUI();
-        }
-
-        // Функция открытия ссылки оплаты
-        function openPaymentLink(url, isDonate = false) {
-            if (window.Telegram?.WebApp) {
-                window.Telegram.WebApp.openLink(url);
-            } else {
-                window.open(url, '_blank');
-            }
-        }
-
-        // Функция для открытия КЛЮЧА 2 (вызывается после подтверждения оплаты)
-        function unlockKey2() {
-            purchased.key2 = true;
-            savePurchased();
-            alert('✨ КЛЮЧ 2 открыт! Благодарим за поддержку.');
-        }
-
-        // Проверка статуса ключа 2 при загрузке (если есть userId и сервер)
+        // ------------------- ПРОВЕРКА СТАТУСА НА СЕРВЕРЕ -------------------
         const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
         if (userId && !purchased.key2) {
-            fetch(`https://tochka-opory.ct.ws/check-key.php?user_id=${userId}&key_id=key2`)
+            fetch(`${SERVER_URL}/check-key.php?user_id=${userId}&key_id=key2`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.open) {
@@ -365,6 +309,40 @@
                     }
                 })
                 .catch(err => console.log('Ошибка проверки ключа', err));
+        }
+
+        // ------------------- ФУНКЦИЯ СОЗДАНИЯ ПЛАТЕЖА -------------------
+        function createPayment(keyId, amount) {
+            if (!userId) {
+                alert('Ошибка: идентификатор пользователя не определён');
+                return;
+            }
+            
+            fetch(`${SERVER_URL}/create-payment.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyId: keyId, amount: amount, userId: userId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.confirmation_url) {
+                    window.location.href = data.confirmation_url;
+                } else {
+                    alert('Ошибка при создании платежа. Попробуйте позже.');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Не удалось соединиться с сервером.');
+            });
+        }
+
+        function openPaymentLink(url) {
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.openLink(url);
+            } else {
+                window.open(url, '_blank');
+            }
         }
 
         // ------------------- ОСНОВНАЯ ЛОГИКА -------------------
@@ -478,21 +456,6 @@
             dynamicDiv.classList.remove('hidden');
         }
 
-        function showPurchaseScreen(keyId, price, paymentUrl) {
-            dynamicDiv.innerHTML = `
-                <div class="meditation-card">
-                    <div class="med-title">🔒 КЛЮЧ ${keyId.slice(-1)}. ${keyId === 'key2' ? 'Золотое сияние' : ''}</div>
-                    <div class="med-sub">Доступ к этой практике закрыт. Вы можете открыть его за ${price} ₽</div>
-                    <button id="buyBtn" class="btn-audio">💳 Купить за ${price} ₽</button>
-                    <button id="closeLocked" class="back-home">← на главную</button>
-                </div>
-            `;
-            document.getElementById('buyBtn')?.addEventListener('click', () => openPaymentLink(paymentUrl, false));
-            document.getElementById('closeLocked')?.addEventListener('click', showHome);
-            homeDiv.classList.add('hidden');
-            dynamicDiv.classList.remove('hidden');
-        }
-
         function openKey(keyId) {
             if (keyId === 'key1') {
                 currentStep = 0;
@@ -502,7 +465,7 @@
                 if (purchased.key2) {
                     showSoonScreen('КЛЮЧ 2 · Золотое сияние');
                 } else {
-                    showPurchaseScreen('key2', '890 ₽', PAYMENT_LINKS.key2);
+                    createPayment('key2', 890);
                 }
             } else if (keyId === 'key3') {
                 showSoonScreen('КЛЮЧ 3 · Искусство быть');
@@ -519,14 +482,11 @@
                         ✨ Ключ 2. Золотое сияние — 890 ₽<br>
                         🧘 Ключ 3. Искусство быть — 1390 ₽<br>
                         🌱 Ключ 4. Субстрат жизненности — 1890 ₽<br><br>
-                        🎁 Все три ключа (2+3+4) — 2990 ₽ (экономия 1480 ₽)<br><br>
-                        Каждый ключ = аудиомедитация + шаги + картинки
+                        🎁 Все три ключа (2+3+4) — 2990 ₽ (экономия 1480 ₽)
                     </div>
-                    <button id="buyAllFromOffer" class="btn-audio">🎁 Купить все ключи за 2990 ₽</button>
                     <button id="offerHome" class="back-home">← на главную</button>
                 </div>
             `;
-            document.getElementById('buyAllFromOffer')?.addEventListener('click', () => openPaymentLink(PAYMENT_LINKS.all, false));
             document.getElementById('offerHome')?.addEventListener('click', showHome);
             homeDiv.classList.add('hidden');
             dynamicDiv.classList.remove('hidden');
@@ -563,7 +523,9 @@
                 `;
                 const playerContainer = document.getElementById(`playerContainer_${step.id}`);
                 const nextButton = document.getElementById(`nextBtn_${step.id}`);
-                initCustomPlayer(AUDIO_URLS[step.audioKey], playerContainer, () => {}, nextButton);
+                initCustomPlayer(step.audioKey === 'key1' ? 'https://files.catbox.moe/udem2c.mp3' : 
+                               step.audioKey === 'setup' ? 'https://files.catbox.moe/qipf0o.mp3' : 
+                               'https://files.catbox.moe/vmafp1.mp3', playerContainer, () => {}, nextButton);
                 document.getElementById(`nextBtn_${step.id}`).addEventListener('click', () => { if (!nextButton.disabled) { stepHistory.push(currentStep); currentStep++; renderStep(); } });
                 document.getElementById(`backBtn_${step.id}`).addEventListener('click', () => { if (stepHistory.length) currentStep = stepHistory.pop(); else if (currentStep > 0) currentStep--; renderStep(); });
                 document.getElementById(`homeAudioBtn_${step.id}`).addEventListener('click', showHome);
@@ -589,7 +551,7 @@
                     dynamicDiv.appendChild(bonusCard);
                     const fakeNext = document.createElement('button');
                     fakeNext.style.display = 'none';
-                    initCustomPlayer(AUDIO_URLS.bonus, document.getElementById('bonusPlayer'), () => {}, fakeNext);
+                    initCustomPlayer('https://files.catbox.moe/mhz6kz.mp3', document.getElementById('bonusPlayer'), () => {}, fakeNext);
                     document.getElementById('closeBonus')?.addEventListener('click', () => renderStep());
                 });
                 document.getElementById('offerBtn')?.addEventListener('click', () => renderOffer());
@@ -599,7 +561,6 @@
             }
         }
 
-        // ------------------- ОБРАБОТЧИКИ КНОПОК -------------------
         document.querySelectorAll('.key-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 const keyId = card.dataset.key;
@@ -607,12 +568,8 @@
             });
         });
 
-        document.getElementById('buyAllBtn')?.addEventListener('click', () => {
-            openPaymentLink(PAYMENT_LINKS.all, false);
-        });
-
         document.getElementById('donateBtn')?.addEventListener('click', () => {
-            openPaymentLink(PAYMENT_LINKS.donate, true);
+            createPayment('key2', 890);
         });
 
         updateKey2StatusUI();
