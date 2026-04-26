@@ -259,6 +259,23 @@
         window.addEventListener('resize', () => resizeCanvas());
         startMandala();
 
+        // ------------------- ПОЛУЧЕНИЕ USER ID (ФИКС) -------------------
+        let userId = null;
+
+        if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
+            userId = window.Telegram.WebApp.initDataUnsafe.user.id;
+        }
+
+        if (!userId) {
+            userId = localStorage.getItem('test_user_id');
+            if (!userId) {
+                userId = prompt('Введите ваш Telegram ID (можно узнать у @userinfobot):');
+                if (userId) {
+                    localStorage.setItem('test_user_id', userId);
+                }
+            }
+        }
+
         // ------------------- НАСТРОЙКИ -------------------
         const SERVER_URL = 'https://tochka-opory.ct.ws';
         
@@ -297,7 +314,6 @@
         }
 
         // ------------------- ПРОВЕРКА СТАТУСА НА СЕРВЕРЕ -------------------
-        const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
         if (userId && !purchased.key2) {
             fetch(`${SERVER_URL}/check-key.php?user_id=${userId}&key_id=key2`)
                 .then(res => res.json())
@@ -314,7 +330,7 @@
         // ------------------- ФУНКЦИЯ СОЗДАНИЯ ПЛАТЕЖА -------------------
         function createPayment(keyId, amount) {
             if (!userId) {
-                alert('Ошибка: идентификатор пользователя не определён');
+                alert('Ошибка: идентификатор пользователя не определён. Откройте приложение в Telegram или введите ID вручную.');
                 return;
             }
             
@@ -335,14 +351,6 @@
                 console.error(err);
                 alert('Не удалось соединиться с сервером.');
             });
-        }
-
-        function openPaymentLink(url) {
-            if (window.Telegram?.WebApp) {
-                window.Telegram.WebApp.openLink(url);
-            } else {
-                window.open(url, '_blank');
-            }
         }
 
         // ------------------- ОСНОВНАЯ ЛОГИКА -------------------
@@ -523,9 +531,11 @@
                 `;
                 const playerContainer = document.getElementById(`playerContainer_${step.id}`);
                 const nextButton = document.getElementById(`nextBtn_${step.id}`);
-                initCustomPlayer(step.audioKey === 'key1' ? 'https://files.catbox.moe/udem2c.mp3' : 
-                               step.audioKey === 'setup' ? 'https://files.catbox.moe/qipf0o.mp3' : 
-                               'https://files.catbox.moe/vmafp1.mp3', playerContainer, () => {}, nextButton);
+                let audioUrl = '';
+                if (step.audioKey === 'key1') audioUrl = 'https://files.catbox.moe/udem2c.mp3';
+                else if (step.audioKey === 'setup') audioUrl = 'https://files.catbox.moe/qipf0o.mp3';
+                else audioUrl = 'https://files.catbox.moe/vmafp1.mp3';
+                initCustomPlayer(audioUrl, playerContainer, () => {}, nextButton);
                 document.getElementById(`nextBtn_${step.id}`).addEventListener('click', () => { if (!nextButton.disabled) { stepHistory.push(currentStep); currentStep++; renderStep(); } });
                 document.getElementById(`backBtn_${step.id}`).addEventListener('click', () => { if (stepHistory.length) currentStep = stepHistory.pop(); else if (currentStep > 0) currentStep--; renderStep(); });
                 document.getElementById(`homeAudioBtn_${step.id}`).addEventListener('click', showHome);
