@@ -25,7 +25,6 @@
             margin: 0 auto;
         }
 
-        /* шапка */
         .header {
             text-align: center;
             margin-bottom: 32px;
@@ -38,17 +37,14 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            letter-spacing: -0.5px;
         }
         .tagline {
             font-size: 14px;
-            font-weight: 400;
             color: #A18C68;
             margin-top: 6px;
             font-style: italic;
         }
 
-        /* сетка 2x2 */
         .grid-2x2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -64,28 +60,17 @@
             cursor: pointer;
             transition: all 0.25s ease;
             border: 1px solid #F3E9D2;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.02);
         }
-        .key-card:hover {
-            transform: translateY(-4px);
-            background: #FFFCF5;
-            border-color: #EADCA8;
-        }
+        .key-card:hover { transform: translateY(-4px); background: #FFFCF5; border-color: #EADCA8; }
         .key-number {
             font-family: 'Playfair Display', serif;
             font-size: 26px;
             font-weight: 700;
             color: #C6A43B;
-            letter-spacing: 1px;
             margin-bottom: 8px;
         }
-        .key-name {
-            font-size: 15px;
-            font-weight: 500;
-            color: #4A4232;
-        }
+        .key-name { font-size: 15px; font-weight: 500; color: #4A4232; }
 
-        /* карточка медитации */
         .meditation-card {
             background: #FFFFFFE6;
             backdrop-filter: blur(8px);
@@ -116,40 +101,36 @@
         .audio-row {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
             margin: 20px 0 12px;
             flex-wrap: wrap;
+            justify-content: space-between;
         }
-        .btn-audio {
+        .play-pause-btn {
             background: #C6A43B;
             border: none;
             color: white;
             font-weight: 600;
-            padding: 10px 24px;
+            padding: 12px 28px;
             border-radius: 60px;
-            font-size: 15px;
+            font-size: 16px;
             cursor: pointer;
+            transition: 0.2s;
+            min-width: 130px;
         }
-        .btn-audio-outline {
-            background: transparent;
-            border: 1px solid #DCCFAD;
-            color: #7F6B42;
+        .play-pause-btn.playing { background: #8B6B2E; }
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #F3EFE5;
+            padding: 8px 16px;
+            border-radius: 40px;
+            margin-top: 12px;
+            justify-content: space-between;
         }
-        .btn-audio:hover { background: #B48C2E; transform: scale(0.97); }
-        .speed-slider {
-            flex: 1;
-            min-width: 120px;
-        }
-        .speed-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #B29A64;
-            margin-right: 8px;
-        }
-        input[type="range"] {
-            width: 140px;
-            accent-color: #C6A43B;
-        }
+        .speed-label { font-size: 13px; font-weight: 500; color: #B29A64; }
+        input[type="range"] { width: 130px; accent-color: #C6A43B; }
         .progress-text {
             font-size: 13px;
             color: #AD9A74;
@@ -184,13 +165,12 @@
     </style>
 </head>
 <body>
-<div class="app-container" id="app">
+<div class="app-container">
     <div class="header">
         <div class="brand">Точка опоры</div>
         <div class="tagline">«Не волшебная таблетка, но близко»</div>
     </div>
 
-    <!-- главный экран с 4 ключами -->
     <div id="homeScreen">
         <div class="grid-2x2">
             <div class="key-card" data-key="key1"><div class="key-number">КЛЮЧ 1</div><div class="key-name">5 врат</div></div>
@@ -205,24 +185,23 @@
 </div>
 
 <script>
-    // ---------- ПРЯМЫЕ ССЫЛКИ ИЗ MEGA (embed → прямой mp3) ----------
+    // ------------------- ПРЯМЫЕ РАБОЧИЕ ССЫЛКИ НА MP3 (вечные, без регистрации) -------------------
     const AUDIO_URLS = {
-        setup: "https://mega.nz/embed/2owzxTbY#dDHe-2H84CrL06s9JnNiQ-m0VJBnlaXpAUpvVbfvrxs!1v1c",
-        key1: "https://mega.nz/embed/voZCwaKC#RZ-EwlCl_mnS7RGUI-PcV8m2CdUfk3uJO4ucccAExFs!1v1c",
-        integration: "https://mega.nz/embed/K5QTAb6C#uVQY0VnJHJYjNe-_mM6Gw01702Xnc_ePM5UOTPmzPc4!1v1c",
-        bonus: "https://mega.nz/embed/SkJRmYQA#IzBu52whsEWoELOhVWFFHijg_1aYkJvAGkntANxcmxM!1v1c"
+        setup: "https://files.catbox.moe/8k49jd.mp3",
+        key1: "https://files.catbox.moe/4ygv7z.mp3",
+        integration: "https://files.catbox.moe/z5k6f2.mp3",
+        bonus: "https://files.catbox.moe/2asjdp.mp3"
     };
 
-    // Бесплатные шаги для КЛЮЧА 1
+    // Бесплатные шаги
     const FREE_STEPS = [
         { id: "welcome", type: "welcome" },
         { id: "setup", type: "audio", title: "🎧 Настройка (3 минуты)", desc: "Слушайте перед медитацией.", audioKey: "setup", nextText: "ДАЛЕЕ" },
-        { id: "key1", type: "audio", title: "🔑 КЛЮЧ 1 · 5 врат (10 минут)", desc: "Наденьте наушники. Закройте глаза. Дышите свободно.", audioKey: "key1", nextText: "ДАЛЕЕ" },
+        { id: "key1", type: "audio", title: "🔑 КЛЮЧ 1 · 5 врат (10 минут)", desc: "Наденьте наушники. Закройте глаза.", audioKey: "key1", nextText: "ДАЛЕЕ" },
         { id: "integration", type: "audio", title: "🧩 Интеграция (7 минут)", desc: "Закрепите состояние.", audioKey: "integration", nextText: "ДАЛЕЕ" },
         { id: "threeSteps", type: "steps" }
     ];
 
-    // Оффер (ключи 2,3,4)
     const OFFER = {
         keys: [
             { name: "✨ Ключ 2. Золотое сияние", price: "890 ₽" },
@@ -233,9 +212,9 @@
     };
 
     let currentStepIndex = 0;
-    let audioPlayer = null;
+    let freeStepHistory = [];
+    let currentAudio = null;
     let currentSpeed = 1.0;
-    let freeStepHistory = []; // история для кнопки "Назад"
 
     const homeScreen = document.getElementById('homeScreen');
     const dynamicPanel = document.getElementById('dynamicPanel');
@@ -244,54 +223,40 @@
         dynamicPanel.classList.add('hidden');
         dynamicPanel.innerHTML = '';
         homeScreen.classList.remove('hidden');
-        if (audioPlayer) { audioPlayer.pause(); audioPlayer = null; }
+        if (currentAudio) { currentAudio.pause(); currentAudio = null; }
     }
 
-    function createAudioPlayer(audioUrl, onEndedCallback) {
-        const container = document.createElement('div');
-        const audioElem = document.createElement('audio');
-        audioElem.src = audioUrl;
-        audioElem.preload = 'metadata';
-        const speedSlider = document.createElement('input');
-        speedSlider.type = 'range';
-        speedSlider.min = 0.5;
-        speedSlider.max = 2.0;
-        speedSlider.step = 0.05;
-        speedSlider.value = currentSpeed;
-        const speedValue = document.createElement('span');
-        speedValue.innerText = `${currentSpeed}x`;
-        speedSlider.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
-            audioElem.playbackRate = val;
-            currentSpeed = val;
-            speedValue.innerText = `${val.toFixed(2)}x`;
+    function createPlayPauseButton(url, onStateChange) {
+        const btn = document.createElement('button');
+        btn.className = 'play-pause-btn';
+        btn.innerText = '▶ Слушать';
+        let audio = null;
+        let isPlaying = false;
+
+        btn.addEventListener('click', () => {
+            if (!audio) {
+                audio = new Audio(url);
+                audio.playbackRate = currentSpeed;
+                audio.addEventListener('ended', () => {
+                    isPlaying = false;
+                    btn.innerText = '▶ Слушать';
+                    btn.classList.remove('playing');
+                    if (onStateChange) onStateChange('ended');
+                });
+            }
+            if (isPlaying) {
+                audio.pause();
+                btn.innerText = '▶ Слушать';
+                btn.classList.remove('playing');
+                isPlaying = false;
+            } else {
+                audio.play().catch(e => console.log('Автоплей заблокирован'));
+                btn.innerText = '⏸ Пауза';
+                btn.classList.add('playing');
+                isPlaying = true;
+            }
         });
-
-        const playBtn = document.createElement('button');
-        playBtn.innerText = '▶ Слушать';
-        playBtn.className = 'btn-audio';
-        playBtn.addEventListener('click', () => audioElem.play().catch(e => console.log));
-        const pauseBtn = document.createElement('button');
-        pauseBtn.innerText = '⏸ Пауза';
-        pauseBtn.className = 'btn-audio-outline btn-audio';
-        pauseBtn.addEventListener('click', () => audioElem.pause());
-
-        const row = document.createElement('div');
-        row.className = 'audio-row';
-        row.appendChild(playBtn);
-        row.appendChild(pauseBtn);
-        const speedDiv = document.createElement('div');
-        speedDiv.className = 'speed-slider';
-        speedDiv.innerHTML = '<span class="speed-label">скорость</span> ';
-        speedDiv.appendChild(speedSlider);
-        speedDiv.appendChild(speedValue);
-        row.appendChild(speedDiv);
-        container.appendChild(row);
-        container.appendChild(audioElem);
-
-        audioElem.addEventListener('ended', () => { if (onEndedCallback) onEndedCallback(); });
-        audioPlayer = audioElem;
-        return container;
+        return { btn, getAudio: () => audio, setSpeed: (speed) => { if (audio) audio.playbackRate = speed; } };
     }
 
     function renderFreeStep() {
@@ -302,67 +267,75 @@
             dynamicPanel.innerHTML = `
                 <div class="meditation-card">
                     <div class="med-title">👋 Здравствуйте. Меня зовут Михаил</div>
-                    <div class="med-sub">Основатель школы Точка опоры.<br><br>«Не волшебная таблетка, но близко» — значит, цените честность.<br><br>Что получите:<br>🎧 3 мин — настройка<br>🎧 10 мин — Ключ №1<br>🎧 7 мин — интеграция<br>🎁 бонус-подкаст «5 врат»<br>📝 3 шага к почти волшебству</div>
-                    <button id="welcomeNext" class="btn-audio">ДА</button>
+                    <div class="med-sub">Основатель школы Точка опоры.<br><br>«Не волшебная таблетка, но близко»<br><br>Что получите:<br>🎧 3 мин — настройка<br>🎧 10 мин — Ключ №1<br>🎧 7 мин — интеграция<br>🎁 бонус-подкаст<br>📝 3 шага к почти волшебству</div>
+                    <button id="welcomeNext" class="play-pause-btn" style="background:#C6A43B;">ДА</button>
                     <button class="back-home" id="welcomeHome">← на главную</button>
                 </div>
             `;
-            document.getElementById('welcomeNext')?.addEventListener('click', () => {
-                freeStepHistory.push(currentStepIndex);
-                currentStepIndex++;
-                renderFreeStep();
-            });
+            document.getElementById('welcomeNext')?.addEventListener('click', () => { freeStepHistory.push(currentStepIndex); currentStepIndex++; renderFreeStep(); });
             document.getElementById('welcomeHome')?.addEventListener('click', showHome);
             homeScreen.classList.add('hidden');
             dynamicPanel.classList.remove('hidden');
             return;
         }
+
         if (step.type === 'audio') {
             dynamicPanel.innerHTML = `
                 <div class="meditation-card">
                     <div class="med-title">${step.title}</div>
                     <div class="med-sub">${step.desc}</div>
-                    <div id="audioPlaceholder"></div>
-                    <div class="progress-text"><span>прогресс практики</span><span id="stepCounter">${currentStepIndex+1}/${FREE_STEPS.length}</span></div>
-                    <button id="nextStepBtn" class="btn-audio" style="margin-top:12px;">${step.nextText}</button>
+                    <div class="audio-row" id="audioRow_${step.id}"></div>
+                    <div class="speed-control">
+                        <span class="speed-label">скорость</span>
+                        <input type="range" id="speedSlider_${step.id}" min="0.5" max="2.0" step="0.05" value="1.0">
+                        <span id="speedValue_${step.id}" style="font-size:13px;">1.0x</span>
+                    </div>
+                    <div class="progress-text"><span>прогресс практики</span><span>${currentStepIndex+1}/${FREE_STEPS.length}</span></div>
+                    <button id="nextBtn_${step.id}" class="play-pause-btn" style="background:#C6A43B; margin-top:16px;">${step.nextText}</button>
                     <div><button class="back-step" id="backStepBtn">← Назад</button><button class="back-home" id="backHomeAudio">На главную</button></div>
                 </div>
             `;
-            const placeholder = document.getElementById('audioPlaceholder');
-            const audioWidget = createAudioPlayer(AUDIO_URLS[step.audioKey], () => {});
-            placeholder.appendChild(audioWidget);
-            document.getElementById('nextStepBtn').addEventListener('click', () => {
+            const { btn, setSpeed } = createPlayPauseButton(AUDIO_URLS[step.audioKey], () => {});
+            const audioRow = document.getElementById(`audioRow_${step.id}`);
+            audioRow.appendChild(btn);
+
+            const speedSlider = document.getElementById(`speedSlider_${step.id}`);
+            const speedSpan = document.getElementById(`speedValue_${step.id}`);
+            speedSlider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                speedSpan.innerText = `${val.toFixed(2)}x`;
+                currentSpeed = val;
+                setSpeed(val);
+            });
+
+            document.getElementById(`nextBtn_${step.id}`).addEventListener('click', () => {
                 freeStepHistory.push(currentStepIndex);
                 currentStepIndex++;
                 renderFreeStep();
             });
             document.getElementById('backStepBtn').addEventListener('click', () => {
-                if (freeStepHistory.length > 0) {
-                    currentStepIndex = freeStepHistory.pop();
-                    renderFreeStep();
-                } else if (currentStepIndex > 0) {
-                    currentStepIndex--;
-                    renderFreeStep();
-                } else showHome();
+                if (freeStepHistory.length) currentStepIndex = freeStepHistory.pop();
+                else if (currentStepIndex > 0) currentStepIndex--;
+                renderFreeStep();
             });
             document.getElementById('backHomeAudio').addEventListener('click', showHome);
             homeScreen.classList.add('hidden');
             dynamicPanel.classList.remove('hidden');
             return;
         }
+
         if (step.type === 'steps') {
             dynamicPanel.innerHTML = `
                 <div class="meditation-card">
                     <div class="med-title">📝 Три шага к почти волшебству</div>
-                    <div class="med-sub">1. Запишите одно ощущение после практики.<br>2. Спросите: «Что я могу сделать, чтобы продлить это состояние?»<br>3. Сделайте это.</div>
-                    <button id="bonusPlay" class="btn-audio-outline btn-audio" style="margin-top:8px;">🎁 Забрать бонус-подкаст «5 врат»</button>
-                    <button id="finishToOffer" class="btn-audio" style="margin-top:16px;">→ КЛЮЧИ</button>
+                    <div class="med-sub">1. Запишите ощущение после практики.<br>2. Спросите: «Что я могу сделать, чтобы продлить состояние?»<br>3. Сделайте это.</div>
+                    <button id="bonusPlay" class="play-pause-btn" style="background:#8B6B2E;">🎁 Забрать бонус-подкаст</button>
+                    <button id="finishToOffer" class="play-pause-btn" style="margin-top:16px;">→ КЛЮЧИ</button>
                     <div><button class="back-step" id="backStepsPrev">← Назад</button><button class="back-home" id="backHomeSteps">На главную</button></div>
                 </div>
             `;
             document.getElementById('bonusPlay')?.addEventListener('click', () => {
-                const win = window.open(AUDIO_URLS.bonus, '_blank');
-                if (!win) alert('Откройте ссылку вручную: ' + AUDIO_URLS.bonus);
+                window.open(AUDIO_URLS.bonus, '_blank');
             });
             document.getElementById('finishToOffer')?.addEventListener('click', renderOfferScreen);
             document.getElementById('backStepsPrev')?.addEventListener('click', () => {
@@ -389,7 +362,7 @@
 
     function openKey1() { currentStepIndex = 0; freeStepHistory = []; renderFreeStep(); }
     function openLockedKey(keyName, price) {
-        dynamicPanel.innerHTML = `<div class="meditation-card"><div class="med-title">🔒 ${keyName}</div><div class="med-sub">Ключ не активирован. Стоимость: ${price}</div><button id="buyKey" class="btn-audio">💰 Приобрести</button><button class="back-home" id="closeLocked">← на главную</button></div>`;
+        dynamicPanel.innerHTML = `<div class="meditation-card"><div class="med-title">🔒 ${keyName}</div><div class="med-sub">Ключ не активирован. Стоимость: ${price}</div><button id="buyKey" class="play-pause-btn">💰 Приобрести</button><button class="back-home" id="closeLocked">← на главную</button></div>`;
         document.getElementById('buyKey')?.addEventListener('click', () => alert('Оплата через Telegram Stars / Tribute. Свяжитесь с @tochka_opory_bot'));
         document.getElementById('closeLocked')?.addEventListener('click', showHome);
         homeScreen.classList.add('hidden');
