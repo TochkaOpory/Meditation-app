@@ -158,27 +158,6 @@
         .offer-card { background: #FEF7E6; border-radius: 40px; padding: 20px; margin-top: 20px; }
         .note { font-size: 11px; color: #BCAA86; text-align: center; margin-top: 20px; }
         .hidden { display: none; }
-        
-        .id-input-container {
-            background: white;
-            border-radius: 48px;
-            padding: 24px;
-            margin: 16px 0;
-            text-align: center;
-        }
-        .id-input {
-            width: 100%;
-            padding: 14px;
-            border-radius: 60px;
-            border: 1px solid #EADCA8;
-            font-size: 16px;
-            margin: 16px 0;
-            text-align: center;
-        }
-        .id-input:focus {
-            outline: none;
-            border-color: #C6A43B;
-        }
     </style>
 </head>
 <body>
@@ -297,81 +276,71 @@
         window.addEventListener('resize', () => resizeCanvas());
         startMandala();
 
-        // ------------------- ОПРЕДЕЛЕНИЕ USER ID (РАБОТАЕТ ВСЕГДА) -------------------
+        // ------------------- АВТОМАТИЧЕСКОЕ ПОЛУЧЕНИЕ USER ID (БЕЗ РУЧНОГО ВВОДА) -------------------
         let userId = null;
         
-        // Пытаемся получить ID из Telegram WebApp
-        function tryGetTelegramId() {
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-                userId = window.Telegram.WebApp.initDataUnsafe.user.id;
-                console.log('✅ Telegram ID получен автоматически:', userId);
-                return true;
+        // Функция для получения ID из Telegram WebApp
+        function getTelegramUserId() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const webapp = window.Telegram.WebApp;
+                webapp.ready();
+                webapp.expand();
+                if (webapp.initDataUnsafe && webapp.initDataUnsafe.user) {
+                    userId = webapp.initDataUnsafe.user.id;
+                    console.log('✅ Telegram ID получен:', userId);
+                    return true;
+                } else if (webapp.initDataUnsafe && webapp.initDataUnsafe.query_id) {
+                    // Если пользователь не авторизован, но приложение открыто в Telegram
+                    console.log('⚠️ Пользователь не авторизован в боте, но приложение работает');
+                    // Создаём временный ID из query_id (только для теста)
+                    userId = 'temp_' + webapp.initDataUnsafe.query_id.substring(0, 10);
+                    return true;
+                }
             }
             return false;
         }
         
-        // Показываем форму для ручного ввода ID (если автоопределение не сработало)
-        function showUserIdInput() {
-            const storedId = localStorage.getItem('manual_user_id');
-            if (storedId) {
-                userId = storedId;
-                console.log('📌 Используем сохранённый ID:', userId);
-                return;
+        // Пытаемся получить ID несколько раз с задержкой
+        let attempts = 0;
+        function waitForUserId() {
+            if (getTelegramUserId()) {
+                // ID получен — продолжаем загрузку приложения
+                startApp();
+            } else if (attempts < 10) {
+                attempts++;
+                console.log(`⏳ Ожидание Telegram WebApp... попытка ${attempts}/10`);
+                setTimeout(waitForUserId, 300);
+            } else {
+                // Если не получилось, создаём специальное сообщение
+                console.error('⚠️ Не удалось получить Telegram ID');
+                showTelegramAuthError();
             }
-            
-            // Показываем диалог для ввода ID
-            const popupDiv = document.createElement('div');
-            popupDiv.className = 'id-input-container';
-            popupDiv.innerHTML = `
-                <div class="med-title">🔐 Требуется ваш Telegram ID</div>
-                <div class="med-sub">Приложение не смогло автоматически определить ваш ID.<br><br>
-                🔍 Узнайте свой ID у бота @userinfobot<br>
-                Скопируйте число и вставьте ниже:</div>
-                <input type="number" id="manualIdInput" class="id-input" placeholder="Введите ваш Telegram ID">
-                <button id="saveIdBtn" class="btn-audio">Сохранить ID</button>
-                <button id="cancelIdBtn" class="back-home">Попробовать снова</button>
+        }
+        
+        function showTelegramAuthError() {
+            const homeDiv = document.getElementById('homeScreen');
+            const dynamicDiv = document.getElementById('dynamicPanel');
+            homeDiv.style.display = 'none';
+            dynamicDiv.classList.remove('hidden');
+            dynamicDiv.innerHTML = `
+                <div class="meditation-card">
+                    <div class="med-title">⚠️ Требуется авторизация в боте</div>
+                    <div class="med-sub">
+                        Для работы приложения необходимо начать диалог с ботом.<br><br>
+                        👇 Нажмите на кнопку ниже, чтобы открыть бота и нажать "Старт".
+                    </div>
+                    <button id="openBotBtn" class="btn-audio">📱 Открыть бота</button>
+                    <button id="retryBtn" class="btn-secondary" style="margin-top: 12px;">🔄 Перезагрузить</button>
+                </div>
             `;
-            document.getElementById('homeScreen').style.display = 'none';
-            document.getElementById('dynamicPanel').innerHTML = '';
-            document.getElementById('dynamicPanel').appendChild(popupDiv);
-            document.getElementById('dynamicPanel').classList.remove('hidden');
-            
-            document.getElementById('saveIdBtn')?.addEventListener('click', () => {
-                const inputId = document.getElementById('manualIdInput').value;
-                if (inputId && inputId.length > 0) {
-                    userId = inputId;
-                    localStorage.setItem('manual_user_id', userId);
-                    console.log('📌 ID сохранён вручную:', userId);
-                    // Перезагружаем приложение для применения ID
-                    window.location.reload();
-                } else {
-                    alert('Пожалуйста, введите корректный Telegram ID');
-                }
+            document.getElementById('openBotBtn')?.addEventListener('click', () => {
+                window.open('https://t.me/tochka_opory_bot', '_blank');
             });
-            
-            document.getElementById('cancelIdBtn')?.addEventListener('click', () => {
-                // Попробуем определить ID ещё раз
-                if (tryGetTelegramId()) {
-                    window.location.reload();
-                } else {
-                    alert('Не удалось определить ID. Убедитесь, что вы открыли приложение внутри Telegram.');
-                }
+            document.getElementById('retryBtn')?.addEventListener('click', () => {
+                window.location.reload();
             });
         }
         
-        // Инициализация определения ID
-        if (!tryGetTelegramId()) {
-            // Даём WebApp время на инициализацию
-            setTimeout(() => {
-                if (!tryGetTelegramId()) {
-                    showUserIdInput();
-                } else {
-                    // ID получен, перезагружаем для корректной инициализации
-                    window.location.reload();
-                }
-            }, 500);
-        }
-
         // ------------------- НАСТРОЙКИ -------------------
         const SERVER_URL = 'https://tochka-opory.ct.ws';
         
@@ -411,7 +380,7 @@
 
         // ------------------- ПРОВЕРКА СТАТУСА НА СЕРВЕРЕ -------------------
         function checkKeyStatus() {
-            if (userId && !purchased.key2) {
+            if (userId && !purchased.key2 && !userId.toString().startsWith('temp_')) {
                 fetch(`${SERVER_URL}/check-key.php?user_id=${userId}&key_id=key2`)
                     .then(res => res.json())
                     .then(data => {
@@ -429,6 +398,11 @@
         function createPayment(keyId, amount) {
             if (!userId) {
                 alert('Не удалось определить ваш Telegram ID. Пожалуйста, перезагрузите приложение.');
+                return;
+            }
+            
+            if (userId.toString().startsWith('temp_')) {
+                alert('Пожалуйста, сначала нажмите "Старт" в боте @tochka_opory_bot, затем перезагрузите приложение.');
                 return;
             }
             
@@ -669,27 +643,34 @@
             }
         }
 
-        document.querySelectorAll('.key-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                const keyId = card.dataset.key;
-                openKey(keyId);
+        function startApp() {
+            document.querySelectorAll('.key-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const keyId = card.dataset.key;
+                    openKey(keyId);
+                });
             });
-        });
 
-        document.getElementById('buyAllBtn')?.addEventListener('click', () => {
-            createPayment('all', 2990);
-        });
+            document.getElementById('buyAllBtn')?.addEventListener('click', () => {
+                createPayment('all', 2990);
+            });
 
-        document.getElementById('donateBtn')?.addEventListener('click', () => {
-            createPayment('donate', 890);
-        });
+            document.getElementById('donateBtn')?.addEventListener('click', () => {
+                createPayment('donate', 890);
+            });
 
-        updateKey2StatusUI();
-        
-        // Запускаем проверку статуса, если ID уже получен
-        if (userId) {
+            updateKey2StatusUI();
             checkKeyStatus();
+            
+            // Показываем главный экран
+            homeDiv.style.display = 'block';
         }
+        
+        // Скрываем главный экран до получения ID
+        homeDiv.style.display = 'none';
+        
+        // Запускаем ожидание ID
+        waitForUserId();
     </script>
 </body>
 </html>
