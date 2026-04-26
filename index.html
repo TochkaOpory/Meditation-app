@@ -316,6 +316,27 @@
     
     // Загрузка статуса ключей из localStorage (или с сервера)
     let purchased = JSON.parse(localStorage.getItem('purchased')) || { key1: true, key2: false, key3: false, key4: false };
+
+    // --- ПОЛУЧЕНИЕ СТАТУСОВ КЛЮЧЕЙ С СЕРВЕРА (синхронизация) ---
+const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+if (userId) {
+    fetch('https://ваш-домен/get-status.php?user_id=' + userId)
+        .then(res => res.json())
+        .then(data => {
+            if (data.open_keys && data.open_keys.length) {
+                // Обновляем purchased на основе данных с сервера
+                data.open_keys.forEach(key => {
+                    if (purchased.hasOwnProperty(key)) {
+                        purchased[key] = true;
+                    }
+                });
+                // Сохраняем в localStorage и обновляем интерфейс
+                localStorage.setItem('purchased', JSON.stringify(purchased));
+                renderKeysGrid();
+            }
+        })
+        .catch(err => console.log('Ошибка загрузки статусов:', err));
+}
     
     function savePurchased() {
         localStorage.setItem('purchased', JSON.stringify(purchased));
@@ -341,10 +362,23 @@
     }
     
     // Функция покупки через ЮKassa
-    function purchaseKey(keyId, price) {
-        // Получаем Telegram User ID (если приложение открыто внутри Telegram)
-        const tg = window.Telegram?.WebApp;
-        const userId = tg?.initDataUnsafe?.user?.id || null;
+   function purchaseKey(keyId, price) {
+    const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+    fetch('https://my-server.ru/create-payment.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyId: keyId, amount: price, userId: userId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.confirmation_url) {
+            window.location.href = data.confirmation_url;
+        } else {
+            alert('Ошибка при создании платежа');
+        }
+    })
+    .catch(() => alert('Не удалось соединиться с сервером'));
+}
         
         // ВАЖНО: замените URL на адрес вашего серверного скрипта
         fetch('https://ваш-домен/create-payment.php', {
