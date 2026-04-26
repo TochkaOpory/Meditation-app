@@ -19,36 +19,11 @@
             min-height: 100vh;
             padding: 24px 20px 60px;
             position: relative;
+            overflow-x: hidden;
         }
 
-        /* МАНДАЛЫ НА ФОНЕ (без ОМ) */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 10%;
-            left: -50px;
-            width: 250px;
-            height: 250px;
-            background: radial-gradient(circle, rgba(198,164,59,0.08) 0%, rgba(198,164,59,0) 70%);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        body::after {
-            content: "";
-            position: fixed;
-            bottom: 5%;
-            right: -30px;
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, rgba(198,164,59,0.06) 0%, rgba(198,164,59,0) 70%);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .mandala-bg {
+        /* АНИМИРОВАННАЯ МАНДАЛА НА ФОНЕ */
+        .mandala-canvas {
             position: fixed;
             top: 0;
             left: 0;
@@ -56,10 +31,7 @@
             height: 100%;
             pointer-events: none;
             z-index: 0;
-            opacity: 0.15;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='none' stroke='%23C6A43B' stroke-width='0.5'/%3E%3Ccircle cx='50' cy='50' r='35' fill='none' stroke='%23C6A43B' stroke-width='0.5'/%3E%3Ccircle cx='50' cy='50' r='25' fill='none' stroke='%23C6A43B' stroke-width='0.5'/%3E%3Ccircle cx='50' cy='50' r='15' fill='none' stroke='%23C6A43B' stroke-width='0.5'/%3E%3C/svg%3E");
-            background-repeat: repeat;
-            background-size: 80px;
+            opacity: 0.35;
         }
 
         .app-container {
@@ -91,7 +63,6 @@
             border: 1px solid #F3E9D2;
             box-shadow: 0 4px 12px rgba(0,0,0,0.02);
             position: relative;
-            overflow: hidden;
         }
 
         .key-card:hover { transform: translateY(-4px); background: white; border-color: #EADCA8; }
@@ -110,18 +81,6 @@
             animation: fadeScale 0.25s ease;
             position: relative;
             z-index: 2;
-        }
-
-        .meditation-card::before {
-            content: "";
-            position: absolute;
-            bottom: 15px;
-            right: 20px;
-            width: 80px;
-            height: 80px;
-            background: radial-gradient(circle, rgba(198,164,59,0.08) 0%, rgba(198,164,59,0) 70%);
-            border-radius: 50%;
-            pointer-events: none;
         }
 
         @keyframes fadeScale {
@@ -197,7 +156,7 @@
     </style>
 </head>
 <body>
-<div class="mandala-bg"></div>
+<canvas id="mandalaCanvas" class="mandala-canvas"></canvas>
 <div class="app-container">
     <div class="header">
         <div class="brand">Точка опоры</div>
@@ -229,6 +188,119 @@
 </div>
 
 <script>
+    // ------------------- АНИМИРОВАННАЯ МАНДАЛА -------------------
+    const canvas = document.getElementById('mandalaCanvas');
+    let ctx = canvas.getContext('2d');
+    let angle = 0;
+    let animationId = null;
+    let isHomeVisible = true;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        drawMandala();
+    }
+
+    function drawMandala() {
+        if (!ctx) return;
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        
+        // центральная точка
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const maxRadius = Math.min(w, h) * 0.4; // 40% от меньшей стороны
+        
+        // рисуем несколько слоёв мандалы
+        const layers = [0.9, 0.7, 0.5, 0.3];
+        const petals = [8, 12, 16, 24];
+        
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(angle);
+        ctx.strokeStyle = '#C6A43B';
+        ctx.lineWidth = 1.5;
+        
+        for (let layer = 0; layer < layers.length; layer++) {
+            const radius = maxRadius * layers[layer];
+            const petalCount = petals[layer];
+            
+            // внешний круг
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // лепестки
+            for (let i = 0; i < petalCount; i++) {
+                const petalAngle = (i / petalCount) * Math.PI * 2;
+                const x1 = Math.cos(petalAngle) * radius * 0.7;
+                const y1 = Math.sin(petalAngle) * radius * 0.7;
+                const x2 = Math.cos(petalAngle + 0.2) * radius;
+                const y2 = Math.sin(petalAngle + 0.2) * radius;
+                const x3 = Math.cos(petalAngle - 0.2) * radius;
+                const y3 = Math.sin(petalAngle - 0.2) * radius;
+                
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(x2, y2);
+                ctx.arc(0, 0, radius, petalAngle - 0.2, petalAngle + 0.2);
+                ctx.lineTo(0, 0);
+                ctx.stroke();
+            }
+        }
+        
+        // центральная звезда
+        const starPoints = 12;
+        const innerRadius = maxRadius * 0.1;
+        const outerRadius = maxRadius * 0.18;
+        ctx.beginPath();
+        for (let i = 0; i < starPoints * 2; i++) {
+            const rad = i % 2 === 0 ? outerRadius : innerRadius;
+            const a = (i / (starPoints * 2)) * Math.PI * 2;
+            const x = Math.cos(a) * rad;
+            const y = Math.sin(a) * rad;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = '#C6A43B';
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
+    function animateMandala() {
+        if (!isHomeVisible) return;
+        angle += 0.003; // скорость вращения
+        drawMandala();
+        animationId = requestAnimationFrame(animateMandala);
+    }
+    
+    function startMandala() {
+        if (animationId) cancelAnimationFrame(animationId);
+        isHomeVisible = true;
+        resizeCanvas();
+        animateMandala();
+    }
+    
+    function stopMandala() {
+        isHomeVisible = false;
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    window.addEventListener('resize', () => {
+        if (isHomeVisible) {
+            resizeCanvas();
+            drawMandala();
+        }
+    });
+    
+    // ------------------- ОСНОВНАЯ ЛОГИКА ПРИЛОЖЕНИЯ -------------------
     const AUDIO_URLS = {
         setup: "https://files.catbox.moe/qipf0o.mp3",
         key1: "https://files.catbox.moe/udem2c.mp3",
@@ -263,6 +335,7 @@
         dynamicDiv.innerHTML = '';
         if (currentAudio) { currentAudio.pause(); currentAudio = null; }
         isPlaying = false;
+        startMandala();
     }
 
     function formatTime(sec) {
@@ -358,7 +431,7 @@
         });
         
         currentAudio = audio;
-        disableNextButton(); // сразу блокируем кнопку "ДАЛЕЕ", пока не начнут слушать
+        disableNextButton();
         return audio;
     }
 
@@ -378,6 +451,7 @@
             document.getElementById('welcomeBtn')?.addEventListener('click', () => { stepHistory.push(currentStep); currentStep++; renderStep(); });
             document.getElementById('homeBtn')?.addEventListener('click', showHome);
             homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
+            stopMandala();
             return;
         }
 
@@ -404,6 +478,7 @@
             document.getElementById(`backBtn_${step.id}`).addEventListener('click', () => { if (stepHistory.length) currentStep = stepHistory.pop(); else if (currentStep > 0) currentStep--; renderStep(); });
             document.getElementById(`homeAudioBtn_${step.id}`).addEventListener('click', showHome);
             homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
+            stopMandala();
             return;
         }
 
@@ -432,6 +507,7 @@
             document.getElementById('backStepsBtn')?.addEventListener('click', () => { if (stepHistory.length) currentStep = stepHistory.pop(); else if (currentStep > 0) currentStep--; renderStep(); });
             document.getElementById('homeStepsBtn')?.addEventListener('click', showHome);
             homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
+            stopMandala();
         }
     }
 
@@ -446,6 +522,7 @@
         `;
         document.getElementById('offerHome')?.addEventListener('click', showHome);
         homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
+        stopMandala();
     }
 
     function openKey1() { currentStep = 0; stepHistory = []; renderStep(); }
@@ -453,6 +530,7 @@
         dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">🔒 ${key}</div><div class="med-sub">Ключ не активирован. Стоимость — уточните в боте.</div><button class="back-home" id="lockedHome">← на главную</button></div>`;
         document.getElementById('lockedHome')?.addEventListener('click', showHome);
         homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
+        stopMandala();
     }
 
     document.querySelectorAll('.key-card').forEach(card => {
@@ -464,6 +542,9 @@
             else if (k === 'key4') openLocked('КЛЮЧ 4 · Субстрат жизненности');
         });
     });
+
+    // ЗАПУСК МАНДАЛЫ ПРИ СТАРТЕ
+    startMandala();
 
     if (window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
 </script>
