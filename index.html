@@ -69,7 +69,6 @@
         .status-open { color: #8BAA6E; }
         .status-closed { color: #C6A43B; }
         .status-locked { color: #B29A64; }
-        .status-soon { color: #B29A64; }
 
         .btn-donate {
             background: transparent;
@@ -291,15 +290,59 @@
             key3: 'https://t.me/tribute/app?startapp=pubx',
             key4: 'https://t.me/tribute/app?startapp=puby',
             all: 'https://t.me/tribute/app?startapp=pubz',
-            donate: 'https://t.me/tribute/app?startapp=dJwq'   // Новая ссылка для доната
+            donate: 'https://t.me/tribute/app?startapp=dJwq'
         };
 
-        function openTributePayment(link) {
+        // ========== CLOUDFLARE WORKER ==========
+        const WORKER_URL = 'https://checker.mirhaet83.workers.dev';
+
+        function openTributePayment(link, keyId, amount) {
+            const paymentId = Date.now().toString();
+            localStorage.setItem('pending_payment_id', paymentId);
+            localStorage.setItem('pending_payment_key', keyId);
+            localStorage.setItem('pending_payment_amount', amount);
+            
+            // Запускаем опрос (long polling) – проверяем статус оплаты
+            startLongPolling(paymentId, keyId);
+            
             if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.openLink(link);
             } else {
                 window.open(link, '_blank');
             }
+        }
+        
+        let pollingInterval = null;
+        
+        function startLongPolling(paymentId, keyId) {
+            if (pollingInterval) clearInterval(pollingInterval);
+            
+            pollingInterval = setInterval(() => {
+                fetch(`${WORKER_URL}/check-payment?id=${paymentId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.paid === true) {
+                            clearInterval(pollingInterval);
+                            // Открываем ключ
+                            if (keyId === 'key2') purchaseKey(keyId);
+                            else if (keyId === 'key3') purchaseKey(keyId);
+                            else if (keyId === 'key4') purchaseKey(keyId);
+                            else if (keyId === 'all') purchaseKey('all');
+                            
+                            localStorage.removeItem('pending_payment_id');
+                            alert('✅ Оплата подтверждена! Доступ открыт.');
+                        }
+                    })
+                    .catch(err => console.log('Polling error:', err));
+            }, 5000);
+            
+            // Останавливаем опрос через 10 минут
+            setTimeout(() => {
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                }
+            }, 600000);
         }
 
         // ------------------- СТАТУСЫ КЛЮЧЕЙ -------------------
@@ -369,7 +412,6 @@
             }
         }
 
-        // Функция покупки (вызывается после оплаты через вебхук или вручную)
         function purchaseKey(keyId) {
             if (keyId === 'key2') {
                 purchased.key2 = true;
@@ -400,7 +442,6 @@
             }
         }
 
-        // Отметить прохождение ключа
         function completeKey(keyId) {
             if (keyId === 'key2') {
                 completed.key2 = true;
@@ -534,7 +575,7 @@
                     <button id="closeLocked" class="back-home">← на главную</button>
                 </div>
             `;
-            document.getElementById('buyBtn')?.addEventListener('click', () => openTributePayment(paymentUrl));
+            document.getElementById('buyBtn')?.addEventListener('click', () => openTributePayment(paymentUrl, keyId, price));
             document.getElementById('closeLocked')?.addEventListener('click', showHome);
             homeDiv.classList.add('hidden');
             dynamicDiv.classList.remove('hidden');
@@ -667,17 +708,11 @@
         });
 
         document.getElementById('buyAllBtn')?.addEventListener('click', () => {
-            openTributePayment(TRIBUTE_LINKS.all);
-            setTimeout(() => {
-                if (confirm('Оплатили комплект? Нажмите OK, чтобы открыть все ключи.')) {
-                    purchaseKey('all');
-                }
-            }, 10000);
+            openTributePayment(TRIBUTE_LINKS.all, 'all', 2990);
         });
 
-        // Кнопка доната — просто открывает ссылку, не меняет статус ключей
         document.getElementById('donateBtn')?.addEventListener('click', () => {
-            openTributePayment(TRIBUTE_LINKS.donate);
+            openTributePayment(TRIBUTE_LINKS.donate, null, null);
         });
 
         updateStatusUI();
