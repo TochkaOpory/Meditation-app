@@ -8,6 +8,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #FEF9EF; font-family: 'Inter', sans-serif; color: #2C2B28; min-height: 100vh; padding: 24px 20px 60px; position: relative; overflow-x: hidden; }
+
         .mandala-canvas {
             position: fixed;
             top: 0;
@@ -16,8 +17,9 @@
             height: 100%;
             pointer-events: none;
             z-index: 0;
-            opacity: 0.25;
+            opacity: 0.35;
         }
+
         .app-container {
             max-width: 500px;
             margin: 0 auto;
@@ -27,6 +29,7 @@
         .header { text-align: center; margin-bottom: 32px; }
         .brand { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 600; background: linear-gradient(135deg, #C6A43B 0%, #E8D194 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .tagline { font-size: 14px; color: #A18C68; margin-top: 6px; font-style: italic; }
+
         .btn-buy-all {
             background: linear-gradient(135deg, #C6A43B 0%, #E8D194 100%);
             border: none;
@@ -41,6 +44,7 @@
             transition: 0.2s;
         }
         .btn-buy-all:hover { transform: scale(0.98); opacity: 0.9; }
+
         .grid-2x2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -64,7 +68,9 @@
         .status-badge { font-size: 11px; margin-top: 6px; font-weight: 400; }
         .status-open { color: #8BAA6E; }
         .status-closed { color: #C6A43B; }
+        .status-locked { color: #B29A64; }
         .status-soon { color: #B29A64; }
+
         .btn-donate {
             background: transparent;
             border: 1px solid #C6A43B;
@@ -79,6 +85,7 @@
             transition: 0.2s;
         }
         .btn-donate:hover { background: rgba(198,164,59,0.1); }
+
         .meditation-card {
             background: rgba(255, 251, 240, 0.96);
             backdrop-filter: blur(4px);
@@ -95,6 +102,7 @@
         }
         .med-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 600; color: #C6A43B; margin-bottom: 8px; }
         .med-sub { font-size: 14px; color: #8B7A5C; margin-bottom: 20px; padding-left: 12px; border-left: 2px solid #EADCA8; }
+
         .custom-player {
             background: linear-gradient(135deg, #FFF9EF 0%, #FEF5E6 100%);
             border-radius: 60px;
@@ -125,6 +133,7 @@
         .seek-bar { flex: 2; min-width: 140px; height: 5px; -webkit-appearance: none; background: #EADCA8; border-radius: 10px; cursor: pointer; }
         .seek-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #C6A43B; border-radius: 50%; cursor: pointer; }
         .speed-select { background: white; border: 1px solid #EADCA8; border-radius: 40px; padding: 8px 14px; font-size: 13px; font-weight: 500; color: #C6A43B; cursor: pointer; }
+
         .btn-audio {
             background: #C6A43B;
             border: none;
@@ -161,13 +170,31 @@
         </div>
         <div id="homeScreen">
             <button id="buyAllBtn" class="btn-buy-all">🎁 Купить все ключи (2+3+4) — 2990 ₽</button>
+            
             <div class="grid-2x2">
-                <div class="key-card" data-key="key1"><div class="key-number">КЛЮЧ 1</div><div class="key-name">5 врат</div><div class="status-badge status-open">✓ открыт доступ</div></div>
-                <div class="key-card" data-key="key2"><div class="key-number">КЛЮЧ 2</div><div class="key-name">Золотое сияние</div><div class="status-badge" id="key2Status">🔒 закрыт доступ</div></div>
-                <div class="key-card" data-key="key3"><div class="key-number">КЛЮЧ 3</div><div class="key-name">Искусство быть</div><div class="status-badge status-soon">🔄 скоро</div></div>
-                <div class="key-card" data-key="key4"><div class="key-number">КЛЮЧ 4</div><div class="key-name">Субстрат жизненности</div><div class="status-badge status-soon">🔄 скоро</div></div>
+                <div class="key-card" data-key="key1">
+                    <div class="key-number">КЛЮЧ 1</div>
+                    <div class="key-name">5 врат</div>
+                    <div class="status-badge status-open">✓ открыт доступ</div>
+                </div>
+                <div class="key-card" data-key="key2">
+                    <div class="key-number">КЛЮЧ 2</div>
+                    <div class="key-name">Золотое сияние</div>
+                    <div class="status-badge" id="key2Status">🔒 закрыт доступ</div>
+                </div>
+                <div class="key-card" data-key="key3">
+                    <div class="key-number">КЛЮЧ 3</div>
+                    <div class="key-name">Искусство быть</div>
+                    <div class="status-badge" id="key3Status">🔒 закрыт доступ</div>
+                </div>
+                <div class="key-card" data-key="key4">
+                    <div class="key-number">КЛЮЧ 4</div>
+                    <div class="key-name">Субстрат жизненности</div>
+                    <div class="status-badge" id="key4Status">🔒 закрыт доступ</div>
+                </div>
             </div>
-            <button id="donateBtn" class="btn-donate">☕ Поддержать проект (донат)</button>
+            
+            <button id="donateBtn" class="btn-donate">👋 Передать привет автору</button>
             <div class="note">нажмите на ключ, чтобы начать практику</div>
         </div>
         <div id="dynamicPanel" class="hidden"></div>
@@ -191,14 +218,18 @@
             const w = canvas.width;
             const h = canvas.height;
             ctx.clearRect(0, 0, w, h);
+            
             const centerX = w / 2;
             const centerY = h / 2;
             const maxRadius = Math.min(w, h) * 0.42;
+            
             ctx.save();
             ctx.translate(centerX, centerY);
             ctx.rotate(angle);
+            
             ctx.shadowBlur = 18;
             ctx.shadowColor = '#C6A43B';
+            
             const grad = ctx.createLinearGradient(-maxRadius, -maxRadius, maxRadius, maxRadius);
             grad.addColorStop(0, '#F5D76E');
             grad.addColorStop(0.5, '#C6A43B');
@@ -206,6 +237,7 @@
             ctx.strokeStyle = grad;
             ctx.fillStyle = grad;
             ctx.lineWidth = 2.2;
+            
             for (let i = 0; i < 12; i++) {
                 const rad = (i / 12) * Math.PI * 2;
                 ctx.beginPath();
@@ -226,6 +258,7 @@
             ctx.beginPath();
             ctx.arc(0, 0, maxRadius * 0.28, 0, Math.PI * 2);
             ctx.fill();
+            
             ctx.restore();
         }
         
@@ -244,71 +277,23 @@
         window.addEventListener('resize', () => resizeCanvas());
         startMandala();
 
+        // ------------------- АУДИО -------------------
+        const AUDIO_URLS = {
+            setup: "https://files.catbox.moe/qipf0o.mp3",
+            key1: "https://files.catbox.moe/udem2c.mp3",
+            integration: "https://files.catbox.moe/vmafp1.mp3",
+            bonus: "https://files.catbox.moe/mhz6kz.mp3"
+        };
+
         // ------------------- TRIBUTE ССЫЛКИ -------------------
         const TRIBUTE_LINKS = {
             key2: 'https://t.me/tribute/app?startapp=pub9',
             key3: 'https://t.me/tribute/app?startapp=pubx',
             key4: 'https://t.me/tribute/app?startapp=puby',
             all: 'https://t.me/tribute/app?startapp=pubz',
-            donate: 'https://t.me/tribute/app?startapp=pub9'
+            donate: 'https://t.me/tribute/app?startapp=dJwq'   // Новая ссылка для доната
         };
 
-        // ------------------- ПОЛУЧЕНИЕ TELEGRAM ID (ТОЛЬКО ДЛЯ ПРОВЕРКИ) -------------------
-        let telegramUserId = null;
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-            telegramUserId = window.Telegram.WebApp.initDataUnsafe.user.id;
-        }
-
-        // ------------------- СТАТУСЫ КЛЮЧЕЙ -------------------
-        let purchased = {
-            key1: true,
-            key2: false,
-            key3: false,
-            key4: false
-        };
-
-        // Загружаем статусы из localStorage
-        const savedPurchased = localStorage.getItem('purchased');
-        if (savedPurchased) {
-            try {
-                const sp = JSON.parse(savedPurchased);
-                purchased = { ...purchased, ...sp };
-            } catch(e) {}
-        }
-
-        function savePurchased() {
-            localStorage.setItem('purchased', JSON.stringify(purchased));
-            updateKey2StatusUI();
-        }
-
-        function updateKey2StatusUI() {
-            const statusSpan = document.getElementById('key2Status');
-            if (statusSpan) {
-                if (purchased.key2) {
-                    statusSpan.innerHTML = '✓ открыт доступ';
-                    statusSpan.className = 'status-badge status-open';
-                } else {
-                    statusSpan.innerHTML = '🔒 закрыт доступ';
-                    statusSpan.className = 'status-badge status-closed';
-                }
-            }
-        }
-
-        // ------------------- ПРОВЕРКА СТАТУСА НА СЕРВЕРЕ -------------------
-        if (telegramUserId) {
-            fetch(`https://tochka-opory.ct.ws/check-purchases.php?user_id=${telegramUserId}&key=key2`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.purchased && !purchased.key2) {
-                        purchased.key2 = true;
-                        savePurchased();
-                        alert('КЛЮЧ 2 открыт! Спасибо за покупку.');
-                    }
-                })
-                .catch(err => console.log('Ошибка проверки покупок', err));
-        }
-
-        // ------------------- ОПЛАТА ЧЕРЕЗ TRIBUTE -------------------
         function openTributePayment(link) {
             if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.openLink(link);
@@ -317,31 +302,385 @@
             }
         }
 
-        // ------------------- КНОПКИ -------------------
-        function openKey(keyId) {
-            if (keyId === 'key1') {
-                alert('КЛЮЧ 1 — бесплатно. Медитация скоро появится.');
-            } else if (keyId === 'key2') {
+        // ------------------- СТАТУСЫ КЛЮЧЕЙ -------------------
+        let purchased = {
+            key1: true,
+            key2: localStorage.getItem('key2_purchased') === 'true',
+            key3: localStorage.getItem('key3_purchased') === 'true',
+            key4: localStorage.getItem('key4_purchased') === 'true'
+        };
+        
+        let completed = {
+            key2: localStorage.getItem('key2_completed') === 'true',
+            key3: localStorage.getItem('key3_completed') === 'true'
+        };
+
+        function savePurchased() {
+            localStorage.setItem('key2_purchased', purchased.key2);
+            localStorage.setItem('key3_purchased', purchased.key3);
+            localStorage.setItem('key4_purchased', purchased.key4);
+            updateStatusUI();
+        }
+
+        function saveCompleted() {
+            localStorage.setItem('key2_completed', completed.key2);
+            localStorage.setItem('key3_completed', completed.key3);
+            updateStatusUI();
+        }
+
+        function updateStatusUI() {
+            const key2Status = document.getElementById('key2Status');
+            if (key2Status) {
                 if (purchased.key2) {
-                    alert('КЛЮЧ 2 открыт! Медитация скоро появится.');
+                    key2Status.innerHTML = '✓ открыт доступ';
+                    key2Status.className = 'status-badge status-open';
                 } else {
-                    openTributePayment(TRIBUTE_LINKS.key2);
+                    key2Status.innerHTML = '🔒 закрыт доступ';
+                    key2Status.className = 'status-badge status-closed';
                 }
-            } else if (keyId === 'key3') {
-                openTributePayment(TRIBUTE_LINKS.key3);
-            } else if (keyId === 'key4') {
-                openTributePayment(TRIBUTE_LINKS.key4);
+            }
+            
+            const key3Status = document.getElementById('key3Status');
+            if (key3Status) {
+                if (!purchased.key3) {
+                    key3Status.innerHTML = '🔒 закрыт доступ';
+                    key3Status.className = 'status-badge status-closed';
+                } else if (purchased.key3 && !completed.key2) {
+                    key3Status.innerHTML = '🔓 сначала пройдите КЛЮЧ 2';
+                    key3Status.className = 'status-badge status-locked';
+                } else if (purchased.key3 && completed.key2) {
+                    key3Status.innerHTML = '✓ открыт доступ';
+                    key3Status.className = 'status-badge status-open';
+                }
+            }
+            
+            const key4Status = document.getElementById('key4Status');
+            if (key4Status) {
+                if (!purchased.key4) {
+                    key4Status.innerHTML = '🔒 закрыт доступ';
+                    key4Status.className = 'status-badge status-closed';
+                } else if (purchased.key4 && (!completed.key2 || !completed.key3)) {
+                    key4Status.innerHTML = '🔓 сначала пройдите КЛЮЧ 2 и КЛЮЧ 3';
+                    key4Status.className = 'status-badge status-locked';
+                } else if (purchased.key4 && completed.key2 && completed.key3) {
+                    key4Status.innerHTML = '✓ открыт доступ';
+                    key4Status.className = 'status-badge status-open';
+                }
             }
         }
 
+        // Функция покупки (вызывается после оплаты через вебхук или вручную)
+        function purchaseKey(keyId) {
+            if (keyId === 'key2') {
+                purchased.key2 = true;
+                savePurchased();
+                alert('КЛЮЧ 2 открыт! Можете приступать к практике.');
+            } else if (keyId === 'key3') {
+                if (!completed.key2) {
+                    alert('Сначала пройдите КЛЮЧ 2');
+                    return;
+                }
+                purchased.key3 = true;
+                savePurchased();
+                alert('КЛЮЧ 3 открыт!');
+            } else if (keyId === 'key4') {
+                if (!completed.key2 || !completed.key3) {
+                    alert('Сначала пройдите КЛЮЧ 2 и КЛЮЧ 3');
+                    return;
+                }
+                purchased.key4 = true;
+                savePurchased();
+                alert('КЛЮЧ 4 открыт!');
+            } else if (keyId === 'all') {
+                purchased.key2 = true;
+                purchased.key3 = true;
+                purchased.key4 = true;
+                savePurchased();
+                alert('Все ключи открыты! Практикуйтесь последовательно.');
+            }
+        }
+
+        // Отметить прохождение ключа
+        function completeKey(keyId) {
+            if (keyId === 'key2') {
+                completed.key2 = true;
+                saveCompleted();
+                alert('Поздравляю! КЛЮЧ 2 пройден. Теперь доступен КЛЮЧ 3.');
+            } else if (keyId === 'key3') {
+                completed.key3 = true;
+                saveCompleted();
+                alert('Поздравляю! КЛЮЧ 3 пройден. Теперь доступен КЛЮЧ 4.');
+            }
+        }
+
+        // ------------------- БЕСПЛАТНАЯ ВОРОНКА КЛЮЧА 1 -------------------
+        const FREE_STEPS = [
+            { type: "welcome" },
+            { type: "audio", id: "setup", title: "🎧 Настройка (3 минуты)", desc: "Слушайте перед медитацией.", audioKey: "setup", nextText: "ДАЛЕЕ" },
+            { type: "audio", id: "key1", title: "🔑 КЛЮЧ 1 · 5 врат (10 минут)", desc: "Закройте глаза, дышите свободно.", audioKey: "key1", nextText: "ДАЛЕЕ → интеграция" },
+            { type: "audio", id: "integration", title: "🧩 Интеграция (7 минут)", desc: "Закрепите состояние.", audioKey: "integration", nextText: "ДАЛЕЕ" },
+            { type: "steps" }
+        ];
+
+        let currentStep = 0;
+        let stepHistory = [];
+        let currentAudio = null;
+        let isPlaying = false;
+        const homeDiv = document.getElementById('homeScreen');
+        const dynamicDiv = document.getElementById('dynamicPanel');
+
+        function formatTime(sec) {
+            if (isNaN(sec)) return "0:00";
+            const mins = Math.floor(sec / 60);
+            const seconds = Math.floor(sec % 60);
+            return `${mins}:${seconds < 10 ? '0' + seconds : seconds}`;
+        }
+
+        function initCustomPlayer(url, container, onEnded, nextBtn) {
+            const audio = new Audio(url);
+            audio.preload = 'metadata';
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'custom-player';
+            playerDiv.innerHTML = `
+                <div class="player-controls">
+                    <button class="play-btn">▶</button>
+                    <span class="time">0:00 / 0:00</span>
+                    <input type="range" class="seek-bar" value="0" step="0.01">
+                    <select class="speed-select">
+                        <option value="0.5">0.5x</option>
+                        <option value="0.75">0.75x</option>
+                        <option value="1" selected>1x</option>
+                        <option value="1.25">1.25x</option>
+                        <option value="1.5">1.5x</option>
+                        <option value="2">2x</option>
+                    </select>
+                </div>
+            `;
+            container.appendChild(playerDiv);
+            const playBtn = playerDiv.querySelector('.play-btn');
+            const timeSpan = playerDiv.querySelector('.time');
+            const seekBar = playerDiv.querySelector('.seek-bar');
+            const speedSelect = playerDiv.querySelector('.speed-select');
+            
+            function enableNext() { if (nextBtn) { nextBtn.disabled = false; nextBtn.classList.remove('disabled'); } }
+            function disableNext() { if (nextBtn) { nextBtn.disabled = true; nextBtn.classList.add('disabled'); } }
+
+            audio.addEventListener('loadedmetadata', () => {
+                if (isFinite(audio.duration)) {
+                    seekBar.max = audio.duration;
+                    timeSpan.innerText = `0:00 / ${formatTime(audio.duration)}`;
+                }
+            });
+            audio.addEventListener('timeupdate', () => {
+                if (!isNaN(audio.duration) && isFinite(audio.duration)) {
+                    seekBar.value = audio.currentTime;
+                    timeSpan.innerText = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+                }
+            });
+            audio.addEventListener('ended', () => {
+                isPlaying = false;
+                playBtn.innerText = '▶';
+                enableNext();
+                if (onEnded) onEnded();
+            });
+            playBtn.addEventListener('click', () => {
+                if (isPlaying) {
+                    audio.pause();
+                    playBtn.innerText = '▶';
+                    isPlaying = false;
+                    enableNext();
+                } else {
+                    audio.play().catch(e => console.log(e));
+                    playBtn.innerText = '⏸';
+                    isPlaying = true;
+                    disableNext();
+                }
+            });
+            seekBar.addEventListener('input', () => { audio.currentTime = parseFloat(seekBar.value); });
+            speedSelect.addEventListener('change', () => { audio.playbackRate = parseFloat(speedSelect.value); });
+            currentAudio = audio;
+            disableNext();
+            return audio;
+        }
+
+        function showHome() {
+            dynamicDiv.classList.add('hidden');
+            homeDiv.classList.remove('hidden');
+            dynamicDiv.innerHTML = '';
+            if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+            isPlaying = false;
+            updateStatusUI();
+        }
+
+        function showSoonScreen(keyName) {
+            dynamicDiv.innerHTML = `
+                <div class="meditation-card">
+                    <div class="med-title">🔄 ${keyName}</div>
+                    <div class="med-sub">Медитация скоро появится.</div>
+                    <button id="closeSoon" class="back-home">← на главную</button>
+                </div>
+            `;
+            document.getElementById('closeSoon')?.addEventListener('click', showHome);
+            homeDiv.classList.add('hidden');
+            dynamicDiv.classList.remove('hidden');
+        }
+
+        function showPurchaseScreen(keyId, price, paymentUrl, message) {
+            dynamicDiv.innerHTML = `
+                <div class="meditation-card">
+                    <div class="med-title">🔒 КЛЮЧ ${keyId.slice(-1)}</div>
+                    <div class="med-sub">${message || `Доступ закрыт. Откройте за ${price} ₽`}</div>
+                    <button id="buyBtn" class="btn-audio">💳 Купить за ${price} ₽</button>
+                    <button id="closeLocked" class="back-home">← на главную</button>
+                </div>
+            `;
+            document.getElementById('buyBtn')?.addEventListener('click', () => openTributePayment(paymentUrl));
+            document.getElementById('closeLocked')?.addEventListener('click', showHome);
+            homeDiv.classList.add('hidden');
+            dynamicDiv.classList.remove('hidden');
+        }
+
+        function openKey(keyId) {
+            if (keyId === 'key1') {
+                currentStep = 0;
+                stepHistory = [];
+                renderStep();
+            } else if (keyId === 'key2') {
+                if (purchased.key2) {
+                    showSoonScreen('КЛЮЧ 2 · Золотое сияние');
+                } else {
+                    showPurchaseScreen('key2', '890', TRIBUTE_LINKS.key2);
+                }
+            } else if (keyId === 'key3') {
+                if (!purchased.key3) {
+                    showPurchaseScreen('key3', '1390', TRIBUTE_LINKS.key3);
+                } else if (!completed.key2) {
+                    showPurchaseScreen('key3', '1390', TRIBUTE_LINKS.key3, 'Сначала пройдите КЛЮЧ 2');
+                } else {
+                    showSoonScreen('КЛЮЧ 3 · Искусство быть');
+                }
+            } else if (keyId === 'key4') {
+                if (!purchased.key4) {
+                    showPurchaseScreen('key4', '1890', TRIBUTE_LINKS.key4);
+                } else if (!completed.key2 || !completed.key3) {
+                    showPurchaseScreen('key4', '1890', TRIBUTE_LINKS.key4, 'Сначала пройдите КЛЮЧ 2 и КЛЮЧ 3');
+                } else {
+                    showSoonScreen('КЛЮЧ 4 · Субстрат жизненности');
+                }
+            }
+        }
+
+        function renderOffer() {
+            dynamicDiv.innerHTML = `
+                <div class="meditation-card offer-card">
+                    <div class="med-title">🔑 Остальные 3 ключа</div>
+                    <div class="med-sub">
+                        ✨ Ключ 2. Золотое сияние — 890 ₽<br>
+                        🧘 Ключ 3. Искусство быть — 1390 ₽<br>
+                        🌱 Ключ 4. Субстрат жизненности — 1890 ₽<br><br>
+                        🎁 Все три ключа (2+3+4) — 2990 ₽ (экономия 1480 ₽)
+                    </div>
+                    <button id="offerHome" class="back-home">← на главную</button>
+                </div>
+            `;
+            document.getElementById('offerHome')?.addEventListener('click', showHome);
+            homeDiv.classList.add('hidden');
+            dynamicDiv.classList.remove('hidden');
+        }
+
+        function renderStep() {
+            const step = FREE_STEPS[currentStep];
+            if (!step) { renderOffer(); return; }
+
+            if (step.type === 'welcome') {
+                dynamicDiv.innerHTML = `
+                    <div class="meditation-card">
+                        <div class="med-title">👋 Здравствуйте. Меня зовут Михаил</div>
+                        <div class="med-sub">Что получите:<br>🎧 3 мин — настройка<br>🎧 10 мин — Ключ №1<br>🎧 7 мин — интеграция<br>🎁 бонус-подкаст<br>📝 3 шага к почти волшебству</div>
+                        <button id="welcomeBtn" class="btn-audio">ДА</button>
+                        <button id="homeBtn" class="back-home">← на главную</button>
+                    </div>
+                `;
+                document.getElementById('welcomeBtn')?.addEventListener('click', () => { stepHistory.push(currentStep); currentStep++; renderStep(); });
+                document.getElementById('homeBtn')?.addEventListener('click', showHome);
+                homeDiv.classList.add('hidden');
+                dynamicDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (step.type === 'audio') {
+                dynamicDiv.innerHTML = `
+                    <div class="meditation-card">
+                        <div class="med-title">${step.title}</div>
+                        <div class="med-sub">${step.desc}</div>
+                        <div id="playerContainer"></div>
+                        <button id="nextBtn" class="btn-audio">${step.nextText}</button>
+                        <div><button id="backBtn" class="back-home">← Назад</button><button id="homeAudioBtn" class="back-home">На главную</button></div>
+                    </div>
+                `;
+                const playerContainer = document.getElementById('playerContainer');
+                const nextButton = document.getElementById('nextBtn');
+                initCustomPlayer(AUDIO_URLS[step.audioKey], playerContainer, () => {}, nextButton);
+                document.getElementById('nextBtn').addEventListener('click', () => { if (!nextButton.disabled) { stepHistory.push(currentStep); currentStep++; renderStep(); } });
+                document.getElementById('backBtn').addEventListener('click', () => { if (stepHistory.length) currentStep = stepHistory.pop(); else if (currentStep > 0) currentStep--; renderStep(); });
+                document.getElementById('homeAudioBtn').addEventListener('click', showHome);
+                homeDiv.classList.add('hidden');
+                dynamicDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (step.type === 'steps') {
+                dynamicDiv.innerHTML = `
+                    <div class="meditation-card">
+                        <div class="med-title">📝 Три шага к почти волшебству</div>
+                        <div class="med-sub">1. Запишите ощущение после практики.<br>2. Спросите: «Что могу сделать, чтобы продлить состояние?» — и сделайте.<br>3. Ваш бонус: подкаст «5 врат».</div>
+                        <button id="bonusBtn" class="btn-audio btn-secondary">🎁 Забрать бонус-подкаст</button>
+                        <button id="offerBtn" class="btn-audio">→ КЛЮЧИ</button>
+                        <div><button id="backStepsBtn" class="back-home">← Назад</button><button id="homeStepsBtn" class="back-home">На главную</button></div>
+                    </div>
+                `;
+                document.getElementById('bonusBtn')?.addEventListener('click', () => {
+                    const bonusCard = document.createElement('div');
+                    bonusCard.className = 'meditation-card';
+                    bonusCard.innerHTML = `<div class="med-title">🎁 Бонус: подкаст «5 врат»</div><div id="bonusPlayer"></div><button class="back-home" id="closeBonus">Закрыть</button>`;
+                    dynamicDiv.innerHTML = '';
+                    dynamicDiv.appendChild(bonusCard);
+                    const fakeNext = document.createElement('button');
+                    fakeNext.style.display = 'none';
+                    initCustomPlayer(AUDIO_URLS.bonus, document.getElementById('bonusPlayer'), () => {}, fakeNext);
+                    document.getElementById('closeBonus')?.addEventListener('click', () => renderStep());
+                });
+                document.getElementById('offerBtn')?.addEventListener('click', () => renderOffer());
+                document.getElementById('backStepsBtn')?.addEventListener('click', () => { if (stepHistory.length) currentStep = stepHistory.pop(); else if (currentStep > 0) currentStep--; renderStep(); });
+                document.getElementById('homeStepsBtn')?.addEventListener('click', showHome);
+                homeDiv.classList.add('hidden');
+                dynamicDiv.classList.remove('hidden');
+            }
+        }
+
+        // ------------------- КНОПКИ -------------------
         document.querySelectorAll('.key-card').forEach(card => {
-            card.addEventListener('click', () => openKey(card.dataset.key));
+            card.addEventListener('click', (e) => {
+                const keyId = card.dataset.key;
+                openKey(keyId);
+            });
         });
 
-        document.getElementById('buyAllBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.all));
-        document.getElementById('donateBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.donate));
+        document.getElementById('buyAllBtn')?.addEventListener('click', () => {
+            openTributePayment(TRIBUTE_LINKS.all);
+            setTimeout(() => {
+                if (confirm('Оплатили комплект? Нажмите OK, чтобы открыть все ключи.')) {
+                    purchaseKey('all');
+                }
+            }, 10000);
+        });
 
-        updateKey2StatusUI();
+        // Кнопка доната — просто открывает ссылку, не меняет статус ключей
+        document.getElementById('donateBtn')?.addEventListener('click', () => {
+            openTributePayment(TRIBUTE_LINKS.donate);
+        });
+
+        updateStatusUI();
 
         if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.ready();
