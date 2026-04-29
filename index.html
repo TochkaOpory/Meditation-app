@@ -8,7 +8,6 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #FEF9EF; font-family: 'Inter', sans-serif; color: #2C2B28; min-height: 100vh; padding: 24px 20px 60px; position: relative; overflow-x: hidden; }
-
         .mandala-canvas {
             position: fixed;
             top: 0;
@@ -19,7 +18,6 @@
             z-index: 0;
             opacity: 0.25;
         }
-
         .app-container {
             max-width: 500px;
             margin: 0 auto;
@@ -29,7 +27,6 @@
         .header { text-align: center; margin-bottom: 32px; }
         .brand { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 600; background: linear-gradient(135deg, #C6A43B 0%, #E8D194 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .tagline { font-size: 14px; color: #A18C68; margin-top: 6px; font-style: italic; }
-
         .btn-buy-all {
             background: linear-gradient(135deg, #C6A43B 0%, #E8D194 100%);
             border: none;
@@ -44,7 +41,6 @@
             transition: 0.2s;
         }
         .btn-buy-all:hover { transform: scale(0.98); opacity: 0.9; }
-
         .grid-2x2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -69,7 +65,6 @@
         .status-open { color: #8BAA6E; }
         .status-closed { color: #C6A43B; }
         .status-soon { color: #B29A64; }
-
         .btn-donate {
             background: transparent;
             border: 1px solid #C6A43B;
@@ -84,88 +79,6 @@
             transition: 0.2s;
         }
         .btn-donate:hover { background: rgba(198,164,59,0.1); }
-
-        /* ФОРМА СОГЛАСИЯ */
-        .consent-form, .user-data-form {
-            background: white;
-            border-radius: 48px;
-            padding: 32px 24px;
-            margin: 16px 0;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.05);
-            animation: fadeScale 0.3s ease;
-        }
-        .form-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 24px;
-            font-weight: 600;
-            color: #C6A43B;
-            margin-bottom: 16px;
-            text-align: center;
-        }
-        .form-sub {
-            font-size: 14px;
-            color: #8B7A5C;
-            margin-bottom: 24px;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #4A4232;
-            margin-bottom: 6px;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 14px 16px;
-            border-radius: 60px;
-            border: 1px solid #EADCA8;
-            font-size: 16px;
-            font-family: 'Inter', sans-serif;
-            background: #FEF9EF;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: #C6A43B;
-        }
-        .checkbox-group {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin: 20px 0;
-        }
-        .checkbox-group input {
-            width: 20px;
-            height: 20px;
-            margin-top: 2px;
-            accent-color: #C6A43B;
-        }
-        .checkbox-group label {
-            font-size: 13px;
-            color: #8B7A5C;
-            line-height: 1.4;
-        }
-        .checkbox-group a {
-            color: #C6A43B;
-            text-decoration: none;
-        }
-        .btn-submit {
-            background: #C6A43B;
-            border: none;
-            color: white;
-            font-weight: 600;
-            padding: 14px 24px;
-            border-radius: 60px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.2s;
-        }
-        .btn-submit:hover { background: #B48C2E; transform: scale(0.98); }
-
         .meditation-card {
             background: rgba(255, 251, 240, 0.96);
             backdrop-filter: blur(4px);
@@ -182,7 +95,6 @@
         }
         .med-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 600; color: #C6A43B; margin-bottom: 8px; }
         .med-sub { font-size: 14px; color: #8B7A5C; margin-bottom: 20px; padding-left: 12px; border-left: 2px solid #EADCA8; }
-
         .custom-player {
             background: linear-gradient(135deg, #FFF9EF 0%, #FEF5E6 100%);
             border-radius: 60px;
@@ -213,7 +125,6 @@
         .seek-bar { flex: 2; min-width: 140px; height: 5px; -webkit-appearance: none; background: #EADCA8; border-radius: 10px; cursor: pointer; }
         .seek-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #C6A43B; border-radius: 50%; cursor: pointer; }
         .speed-select { background: white; border: 1px solid #EADCA8; border-radius: 40px; padding: 8px 14px; font-size: 13px; font-weight: 500; color: #C6A43B; cursor: pointer; }
-
         .btn-audio {
             background: #C6A43B;
             border: none;
@@ -248,7 +159,18 @@
             <div class="brand">Точка опоры</div>
             <div class="tagline">«Не волшебная таблетка, но близко»</div>
         </div>
-        <div id="appContent"></div>
+        <div id="homeScreen">
+            <button id="buyAllBtn" class="btn-buy-all">🎁 Купить все ключи (2+3+4) — 2990 ₽</button>
+            <div class="grid-2x2">
+                <div class="key-card" data-key="key1"><div class="key-number">КЛЮЧ 1</div><div class="key-name">5 врат</div><div class="status-badge status-open">✓ открыт доступ</div></div>
+                <div class="key-card" data-key="key2"><div class="key-number">КЛЮЧ 2</div><div class="key-name">Золотое сияние</div><div class="status-badge" id="key2Status">🔒 закрыт доступ</div></div>
+                <div class="key-card" data-key="key3"><div class="key-number">КЛЮЧ 3</div><div class="key-name">Искусство быть</div><div class="status-badge status-soon">🔄 скоро</div></div>
+                <div class="key-card" data-key="key4"><div class="key-number">КЛЮЧ 4</div><div class="key-name">Субстрат жизненности</div><div class="status-badge status-soon">🔄 скоро</div></div>
+            </div>
+            <button id="donateBtn" class="btn-donate">☕ Поддержать проект (донат)</button>
+            <div class="note">нажмите на ключ, чтобы начать практику</div>
+        </div>
+        <div id="dynamicPanel" class="hidden"></div>
     </div>
 
     <script>
@@ -269,18 +191,14 @@
             const w = canvas.width;
             const h = canvas.height;
             ctx.clearRect(0, 0, w, h);
-            
             const centerX = w / 2;
             const centerY = h / 2;
             const maxRadius = Math.min(w, h) * 0.42;
-            
             ctx.save();
             ctx.translate(centerX, centerY);
             ctx.rotate(angle);
-            
             ctx.shadowBlur = 18;
             ctx.shadowColor = '#C6A43B';
-            
             const grad = ctx.createLinearGradient(-maxRadius, -maxRadius, maxRadius, maxRadius);
             grad.addColorStop(0, '#F5D76E');
             grad.addColorStop(0.5, '#C6A43B');
@@ -288,7 +206,6 @@
             ctx.strokeStyle = grad;
             ctx.fillStyle = grad;
             ctx.lineWidth = 2.2;
-            
             for (let i = 0; i < 12; i++) {
                 const rad = (i / 12) * Math.PI * 2;
                 ctx.beginPath();
@@ -309,7 +226,6 @@
             ctx.beginPath();
             ctx.arc(0, 0, maxRadius * 0.28, 0, Math.PI * 2);
             ctx.fill();
-            
             ctx.restore();
         }
         
@@ -328,246 +244,104 @@
         window.addEventListener('resize', () => resizeCanvas());
         startMandala();
 
-        // ------------------- ЛОГИКА ПРИЛОЖЕНИЯ -------------------
-        const SERVER_URL = 'https://tochka-opory.ct.ws';
-        const appContainer = document.getElementById('appContent');
+        // ------------------- TRIBUTE ССЫЛКИ -------------------
+        const TRIBUTE_LINKS = {
+            key2: 'https://t.me/tribute/app?startapp=pub9',
+            key3: 'https://t.me/tribute/app?startapp=pubx',
+            key4: 'https://t.me/tribute/app?startapp=puby',
+            all: 'https://t.me/tribute/app?startapp=pubz',
+            donate: 'https://t.me/tribute/app?startapp=pub9'
+        };
 
-        // Проверяем, дал ли пользователь согласие и данные
-        const userConsent = localStorage.getItem('user_consent');
-        const userData = localStorage.getItem('user_data');
-
-        // Уникальный ID пользователя для привязки покупок
-        let userId = localStorage.getItem('app_user_id');
-        if (!userId) {
-            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-            localStorage.setItem('app_user_id', userId);
+        // ------------------- ПОЛУЧЕНИЕ TELEGRAM ID (ТОЛЬКО ДЛЯ ПРОВЕРКИ) -------------------
+        let telegramUserId = null;
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+            telegramUserId = window.Telegram.WebApp.initDataUnsafe.user.id;
         }
 
-        // Статусы ключей
+        // ------------------- СТАТУСЫ КЛЮЧЕЙ -------------------
         let purchased = {
             key1: true,
-            key2: localStorage.getItem('key2_purchased') === 'true',
+            key2: false,
             key3: false,
             key4: false
         };
 
-        function saveKey2Status() {
-            localStorage.setItem('key2_purchased', purchased.key2);
+        // Загружаем статусы из localStorage
+        const savedPurchased = localStorage.getItem('purchased');
+        if (savedPurchased) {
+            try {
+                const sp = JSON.parse(savedPurchased);
+                purchased = { ...purchased, ...sp };
+            } catch(e) {}
         }
 
-        // Отрисовка формы согласия
-        function showConsentForm() {
-            appContainer.innerHTML = `
-                <div class="consent-form">
-                    <div class="form-title">✨ Добро пожаловать</div>
-                    <div class="form-sub">Перед началом практики необходимо принять условия</div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="consentCheckbox">
-                        <label for="consentCheckbox">
-                            Я принимаю <a href="#" id="privacyLink">условия обработки персональных данных</a> и согласен(на) на получение информационных сообщений
-                        </label>
-                    </div>
-                    <button id="consentBtn" class="btn-submit" disabled>Продолжить</button>
-                </div>
-            `;
-            
-            const checkbox = document.getElementById('consentCheckbox');
-            const consentBtn = document.getElementById('consentBtn');
-            const privacyLink = document.getElementById('privacyLink');
-            
-            checkbox.addEventListener('change', () => {
-                consentBtn.disabled = !checkbox.checked;
-            });
-            
-            consentBtn.addEventListener('click', () => {
-                localStorage.setItem('user_consent', 'true');
-                showUserDataForm();
-            });
-            
-            privacyLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                alert('Политика конфиденциальности: ваши данные используются только для связи и не передаются третьим лицам.');
-            });
+        function savePurchased() {
+            localStorage.setItem('purchased', JSON.stringify(purchased));
+            updateKey2StatusUI();
         }
 
-        // Форма сбора контактов
-        function showUserDataForm() {
-            appContainer.innerHTML = `
-                <div class="user-data-form">
-                    <div class="form-title">📝 Расскажите о себе</div>
-                    <div class="form-sub">Это поможет мне сделать практики более точными для вас</div>
-                    <div class="form-group">
-                        <label>Ваше имя *</label>
-                        <input type="text" id="userName" placeholder="Как к вам обращаться?">
-                    </div>
-                    <div class="form-group">
-                        <label>Телефон *</label>
-                        <input type="tel" id="userPhone" placeholder="+7 (___) ___-__-__">
-                    </div>
-                    <div class="form-group">
-                        <label>Email (необязательно)</label>
-                        <input type="email" id="userEmail" placeholder="your@email.com">
-                    </div>
-                    <button id="submitDataBtn" class="btn-submit">Начать практику →</button>
-                    <div class="note">* обязательные поля</div>
-                </div>
-            `;
-            
-            document.getElementById('submitDataBtn').addEventListener('click', () => {
-                const name = document.getElementById('userName').value.trim();
-                const phone = document.getElementById('userPhone').value.trim();
-                const email = document.getElementById('userEmail').value.trim();
-                
-                if (!name || !phone) {
-                    alert('Пожалуйста, заполните имя и телефон');
-                    return;
-                }
-                
-                // Сохраняем локально
-                const userDataObj = { name, phone, email };
-                localStorage.setItem('user_data', JSON.stringify(userDataObj));
-                
-                // Отправляем на сервер
-                fetch(`${SERVER_URL}/save-user.php`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, phone, email, userId })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        showMainApp();
-                    } else {
-                        alert('Ошибка сохранения: ' + (data.error || 'попробуйте позже'));
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    // Даже если сервер недоступен, показываем приложение
-                    showMainApp();
-                });
-            });
-        }
-
-        // Основное приложение (медитации, ключи)
-        function showMainApp() {
-            appContainer.innerHTML = `
-                <div id="homeScreen">
-                    <button id="buyAllBtn" class="btn-buy-all">🎁 Купить все ключи (2+3+4) — 2990 ₽</button>
-                    
-                    <div class="grid-2x2">
-                        <div class="key-card" data-key="key1">
-                            <div class="key-number">КЛЮЧ 1</div>
-                            <div class="key-name">5 врат</div>
-                            <div class="status-badge status-open">✓ открыт доступ</div>
-                        </div>
-                        <div class="key-card" data-key="key2">
-                            <div class="key-number">КЛЮЧ 2</div>
-                            <div class="key-name">Золотое сияние</div>
-                            <div class="status-badge" id="key2Status">${purchased.key2 ? '✓ открыт доступ' : '🔒 закрыт доступ'}</div>
-                        </div>
-                        <div class="key-card" data-key="key3">
-                            <div class="key-number">КЛЮЧ 3</div>
-                            <div class="key-name">Искусство быть</div>
-                            <div class="status-badge status-soon">🔄 скоро</div>
-                        </div>
-                        <div class="key-card" data-key="key4">
-                            <div class="key-number">КЛЮЧ 4</div>
-                            <div class="key-name">Субстрат жизненности</div>
-                            <div class="status-badge status-soon">🔄 скоро</div>
-                        </div>
-                    </div>
-                    
-                    <button id="donateBtn" class="btn-donate">☕ Поддержать проект (донат)</button>
-                    <div class="note">нажмите на ключ, чтобы начать практику</div>
-                </div>
-                <div id="dynamicPanel" class="hidden"></div>
-            `;
-
-            // Функция создания платежа
-            function createPayment(keyId, amount) {
-                const paymentTime = Date.now();
-                fetch(`${SERVER_URL}/create-payment.php`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ keyId, amount, paymentTime, userId })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.confirmation_url) {
-                        // Сохраняем время платежа, чтобы потом проверить оплату
-                        localStorage.setItem('pending_payment_time', paymentTime);
-                        localStorage.setItem('pending_payment_key', keyId);
-                        window.location.href = data.confirmation_url;
-                    } else {
-                        alert('Ошибка при создании платежа');
-                    }
-                })
-                .catch(() => alert('Сервер недоступен'));
-            }
-
-            // Проверяем, не было ли успешной оплаты при возврате
-            const pendingTime = localStorage.getItem('pending_payment_time');
-            const pendingKey = localStorage.getItem('pending_payment_key');
-            if (pendingTime && pendingKey && !purchased.key2) {
-                fetch(`${SERVER_URL}/check-payment.php?time=${pendingTime}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.paid) {
-                            purchased.key2 = true;
-                            saveKey2Status();
-                            updateKey2StatusUI();
-                            alert('КЛЮЧ 2 открыт! Спасибо за покупку.');
-                        }
-                        localStorage.removeItem('pending_payment_time');
-                        localStorage.removeItem('pending_payment_key');
-                    })
-                    .catch(console.error);
-            }
-
-            function updateKey2StatusUI() {
-                const statusSpan = document.getElementById('key2Status');
-                if (statusSpan) {
-                    if (purchased.key2) {
-                        statusSpan.innerHTML = '✓ открыт доступ';
-                        statusSpan.className = 'status-badge status-open';
-                    } else {
-                        statusSpan.innerHTML = '🔒 закрыт доступ';
-                        statusSpan.className = 'status-badge status-closed';
-                    }
-                }
-            }
-
-            function openKey(keyId) {
-                if (keyId === 'key1') {
-                    alert('КЛЮЧ 1 — бесплатно. Медитация скоро появится.');
-                } else if (keyId === 'key2') {
-                    if (purchased.key2) {
-                        alert('КЛЮЧ 2 открыт! Медитация скоро появится.');
-                    } else {
-                        createPayment('key2', 890);
-                    }
+        function updateKey2StatusUI() {
+            const statusSpan = document.getElementById('key2Status');
+            if (statusSpan) {
+                if (purchased.key2) {
+                    statusSpan.innerHTML = '✓ открыт доступ';
+                    statusSpan.className = 'status-badge status-open';
                 } else {
-                    alert('Этот ключ временно недоступен');
+                    statusSpan.innerHTML = '🔒 закрыт доступ';
+                    statusSpan.className = 'status-badge status-closed';
                 }
             }
-
-            document.querySelectorAll('.key-card').forEach(card => {
-                card.addEventListener('click', () => openKey(card.dataset.key));
-            });
-
-            document.getElementById('buyAllBtn')?.addEventListener('click', () => createPayment('all', 2990));
-            document.getElementById('donateBtn')?.addEventListener('click', () => createPayment('donate', 890));
         }
 
-        // Запуск
-        if (userConsent && userData) {
-            showMainApp();
-        } else if (userConsent && !userData) {
-            showUserDataForm();
-        } else {
-            showConsentForm();
+        // ------------------- ПРОВЕРКА СТАТУСА НА СЕРВЕРЕ -------------------
+        if (telegramUserId) {
+            fetch(`https://tochka-opory.ct.ws/check-purchases.php?user_id=${telegramUserId}&key=key2`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.purchased && !purchased.key2) {
+                        purchased.key2 = true;
+                        savePurchased();
+                        alert('КЛЮЧ 2 открыт! Спасибо за покупку.');
+                    }
+                })
+                .catch(err => console.log('Ошибка проверки покупок', err));
         }
+
+        // ------------------- ОПЛАТА ЧЕРЕЗ TRIBUTE -------------------
+        function openTributePayment(link) {
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.openLink(link);
+            } else {
+                window.open(link, '_blank');
+            }
+        }
+
+        // ------------------- КНОПКИ -------------------
+        function openKey(keyId) {
+            if (keyId === 'key1') {
+                alert('КЛЮЧ 1 — бесплатно. Медитация скоро появится.');
+            } else if (keyId === 'key2') {
+                if (purchased.key2) {
+                    alert('КЛЮЧ 2 открыт! Медитация скоро появится.');
+                } else {
+                    openTributePayment(TRIBUTE_LINKS.key2);
+                }
+            } else if (keyId === 'key3') {
+                openTributePayment(TRIBUTE_LINKS.key3);
+            } else if (keyId === 'key4') {
+                openTributePayment(TRIBUTE_LINKS.key4);
+            }
+        }
+
+        document.querySelectorAll('.key-card').forEach(card => {
+            card.addEventListener('click', () => openKey(card.dataset.key));
+        });
+
+        document.getElementById('buyAllBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.all));
+        document.getElementById('donateBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.donate));
+
+        updateKey2StatusUI();
 
         if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.ready();
