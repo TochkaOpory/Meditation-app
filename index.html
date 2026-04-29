@@ -303,7 +303,6 @@
             localStorage.setItem('pending_payment_key', keyId);
             localStorage.setItem('pending_payment_amount', amount);
             
-            // Запускаем опрос (long polling) – проверяем статус оплаты
             startLongPolling(paymentId, keyId);
             
             if (window.Telegram?.WebApp) {
@@ -324,7 +323,6 @@
                     .then(data => {
                         if (data.paid === true) {
                             clearInterval(pollingInterval);
-                            // Открываем ключ
                             if (keyId === 'key2') purchaseKey(keyId);
                             else if (keyId === 'key3') purchaseKey(keyId);
                             else if (keyId === 'key4') purchaseKey(keyId);
@@ -337,7 +335,6 @@
                     .catch(err => console.log('Polling error:', err));
             }, 5000);
             
-            // Останавливаем опрос через 10 минут
             setTimeout(() => {
                 if (pollingInterval) {
                     clearInterval(pollingInterval);
@@ -712,4 +709,16 @@
             openTributePayment(TRIBUTE_LINKS.all, 'all', 2990);
         });
 
-        document.getElementById('donateBtn')?.add
+        document.getElementById('donateBtn')?.addEventListener('click', () => {
+            openTributePayment(TRIBUTE_LINKS.donate, null, null);
+        });
+
+        updateStatusUI();
+
+        if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+    </script>
+</body>
+</html>
