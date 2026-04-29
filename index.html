@@ -69,6 +69,7 @@
         .status-open { color: #8BAA6E; }
         .status-closed { color: #C6A43B; }
         .status-locked { color: #B29A64; }
+        .status-soon { color: #B29A64; }
 
         .btn-donate {
             background: transparent;
@@ -711,16 +712,4 @@
             openTributePayment(TRIBUTE_LINKS.all, 'all', 2990);
         });
 
-        document.getElementById('donateBtn')?.addEventListener('click', () => {
-            openTributePayment(TRIBUTE_LINKS.donate, null, null);
-        });
-
-        updateStatusUI();
-
-        if (window.Telegram?.WebApp) {
-            window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand();
-        }
-    </script>
-</body>
-</html>
+        document.getElementById('donateBtn')?.add
