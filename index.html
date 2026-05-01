@@ -156,6 +156,17 @@
             key3: localStorage.getItem('key3_purchased') === 'true',
             key4: localStorage.getItem('key4_purchased') === 'true'
         };
+                // 👇 АДМИНИСТРАТОР: открываем все ключи для Telegram ID 879043180
+        const tg = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (tg && tg.id === 879043180) {
+            purchased.key2 = true;
+            purchased.key3 = true;
+            purchased.key4 = true;
+            // сохраняем, чтобы при повторном открытии не сбрасывалось
+            localStorage.setItem('key2_purchased', 'true');
+            localStorage.setItem('key3_purchased', 'true');
+            localStorage.setItem('key4_purchased', 'true');
+        }
         let completed = {
             key2: localStorage.getItem('key2_completed') === 'true',
             key3: localStorage.getItem('key3_completed') === 'true'
