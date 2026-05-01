@@ -73,13 +73,13 @@
         <div id="dynamicPanel" class="hidden"></div>
     </div>
     <script>
-        // ------------------- МАНДАЛА (без изменений) -------------------
+        // ------------------- МАНДАЛА -------------------
         const canvas = document.getElementById('mandalaCanvas');
         let ctx = canvas.getContext('2d');
         let angle = 0;
         let animationId = null;
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; drawMandala(); }
-        function drawMandala() { /* ... мандала из предыдущей версии ... */ 
+        function drawMandala() { 
             if (!ctx) return;
             const w = canvas.width, h = canvas.height;
             ctx.clearRect(0, 0, w, h);
@@ -102,7 +102,7 @@
         window.addEventListener('resize',()=>resizeCanvas());
         startMandala();
 
-        // ------------------- АУДИО (общие ссылки) -------------------
+        // ------------------- АУДИО -------------------
         const AUDIO_URLS = {
             setup: "https://files.catbox.moe/qipf0o.mp3",
             key1: "https://files.catbox.moe/udem2c.mp3",
@@ -121,7 +121,7 @@
 
         const WORKER_URL = 'https://checker.mirhaet83.workers.dev';
 
-        // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ОПЛАТЫ (без изменений) ----------
+        // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ОПЛАТЫ ----------
         function openTributePayment(link, keyId, amount) {
             const paymentId = Date.now().toString();
             localStorage.setItem('pending_payment_id', paymentId);
@@ -156,27 +156,48 @@
             key3: localStorage.getItem('key3_purchased') === 'true',
             key4: localStorage.getItem('key4_purchased') === 'true'
         };
-                // 👇 АДМИНИСТРАТОР: открываем все ключи для Telegram ID 879043180
-        const tg = window.Telegram?.WebApp?.initDataUnsafe?.user;
-        if (tg && tg.id === 879043180) {
-            purchased.key2 = true;
-            purchased.key3 = true;
-            purchased.key4 = true;
-            // сохраняем, чтобы при повторном открытии не сбрасывалось
-            localStorage.setItem('key2_purchased', 'true');
-            localStorage.setItem('key3_purchased', 'true');
-            localStorage.setItem('key4_purchased', 'true');
-        }
         let completed = {
             key2: localStorage.getItem('key2_completed') === 'true',
             key3: localStorage.getItem('key3_completed') === 'true'
         };
-        // Флаги первого запуска (приветствие показываем один раз)
         let welcomeShown = {
             key2: localStorage.getItem('key2_welcome_shown') === 'true',
             key3: localStorage.getItem('key3_welcome_shown') === 'true',
             key4: localStorage.getItem('key4_welcome_shown') === 'true'
         };
+
+        // === АВТОМАТИЧЕСКОЕ ОТКРЫТИЕ КЛЮЧЕЙ ДЛЯ ADMIN (Telegram ID 879043180) ===
+        // Используем функцию, которая будет вызвана после полной инициализации WebApp
+        function grantAdminAccess() {
+            try {
+                const webapp = window.Telegram?.WebApp;
+                if (webapp && webapp.initDataUnsafe && webapp.initDataUnsafe.user) {
+                    const userId = webapp.initDataUnsafe.user.id;
+                    if (userId === 879043180) {
+                        if (!purchased.key2) {
+                            purchased.key2 = true;
+                            purchased.key3 = true;
+                            purchased.key4 = true;
+                            localStorage.setItem('key2_purchased', 'true');
+                            localStorage.setItem('key3_purchased', 'true');
+                            localStorage.setItem('key4_purchased', 'true');
+                            savePurchased();
+                            updateStatusUI();
+                            console.log('✅ Администратор: все ключи открыты');
+                        }
+                    } else {
+                        console.log('Обычный пользователь, ID:', userId);
+                    }
+                } else {
+                    console.log('WebApp не инициализирован, повтор через 500ms');
+                    setTimeout(grantAdminAccess, 500);
+                }
+            } catch(e) {
+                console.log('Ошибка доступа, повтор:', e);
+                setTimeout(grantAdminAccess, 500);
+            }
+        }
+
         function savePurchased() {
             localStorage.setItem('key2_purchased', purchased.key2);
             localStorage.setItem('key3_purchased', purchased.key3);
@@ -217,11 +238,10 @@
             else if(keyId === 'key3') { completed.key3 = true; saveCompleted(); alert('Поздравляю! КЛЮЧ 3 пройден. Теперь доступен КЛЮЧ 4.'); }
         }
 
-        // ---------- ОБЩАЯ НАВИГАЦИЯ ПО ШАГАМ ДЛЯ КЛЮЧЕЙ 2-4 ----------
-        let currentPath = null; // { keyId, stepIndex, history }
+        // ---------- НАВИГАЦИЯ ПО КЛЮЧАМ 2-4 ----------
+        let currentPath = null;
         function navigateToKey(keyId) {
             if(!purchased[keyId]) { alert('Доступ закрыт'); return; }
-            // Если ключ уже открыт и есть прогресс, загружаем его
             let saved = localStorage.getItem(`key_${keyId}_progress`);
             if(saved) {
                 let prog = JSON.parse(saved);
@@ -250,14 +270,12 @@
             const { keyId, stepIndex, history } = currentPath;
             const steps = getStepsForKey(keyId);
             if(stepIndex >= steps.length) {
-                // Все шаги пройдены
                 completeKey(keyId);
                 resetKeyProgress(keyId);
                 showHome();
                 return;
             }
             const step = steps[stepIndex];
-            // Если это приветственное сообщение и оно уже показывалось, пропускаем
             if(step.type === 'welcome' && currentPath.welcomeShown) {
                 currentPath.stepIndex++;
                 saveCurrentProgress();
@@ -288,15 +306,11 @@
                 saveCurrentProgress();
                 renderCurrentStep();
             } else {
-                // Возврат в главное меню
                 showHome();
             }
         }
-        function goHome() {
-            showHome();
-        }
+        function goHome() { showHome(); }
 
-        // ---------- КОНФИГУРАЦИЯ ШАГОВ ДЛЯ КЛЮЧЕЙ 2,3,4 ----------
         function getStepsForKey(keyId) {
             if(keyId === 'key2') return KEY2_STEPS;
             if(keyId === 'key3') return KEY3_STEPS;
@@ -333,7 +347,7 @@
             { type: 'text', content: '📌 Заключительные пояснения\n\nУпражнение «Субстрат Жизненности» нужно делать каждый день в течение месяца (лучше года). Тогда тело привыкает к новому взгляду на жизнь.\nВ начале трудно, потом появляется исследовательское начало — «хочется полазить по дырам своей судьбы».\n\n«Вы не разбираетесь с психологией “я плохо поступил”. Вы просто понимаете: я живой, вокруг меня жизнь, значит, всё в порядке. Я поступил так, как мог. Если бы мог лучше — отказался бы? Нет.»\n\n«Это реальное освобождение, дарующее сильную жизнь!»', btnText: '✨ Приступить к практическим рекомендациям' },
             { type: 'audio', audio: 'https://files.catbox.moe/t5seju.mp3', title: '🎧 Практические рекомендации', text: 'Теперь вы готовы к большой медитации.\n\nПосле практики возвращайтесь к этим шагам. И помните: вы уже выжили — значит, справитесь и с будущим.', btnText: '🧘 Приступить к медитации' },
             { type: 'audio', audio: 'https://files.catbox.moe/8fs2kd.mp3', title: '🎧 Медитация «Субстрат жизненности»', text: '', btnText: '✅ Завершить ключ 4' },
-            { type: 'bonus_pdf', pdf: 'https://files.catbox.moe/nrf3ik.pdf', text: '📘 Следующий шаг — понимание себя\n\n«Структура потребностей»\n\nЧто внутри:\n• Три группы потребностей: витальные, социальные, ideальные\n• Как потребности «для себя» и «для других» формируют личность\n• Что такое потребность в вооружённости и воля\n• Почему мы путаем «хочу» и «надо»\n\nБез этой теории вы можете не понять, почему медитация иногда не даёт результата. С ней — будете видеть свои истинные мотивы.', btnText: '📥 Скачать PDF' },
+            { type: 'bonus_pdf', pdf: 'https://files.catbox.moe/nrf3ik.pdf', text: '📘 Следующий шаг — понимание себя\n\n«Структура потребностей»\n\nЧто внутри:\n• Три группы потребностей: витальные, социальные, идеальные\n• Как потребности «для себя» и «для других» формируют личность\n• Что такое потребность в вооружённости и воля\n• Почему мы путаем «хочу» и «надо»\n\nБез этой теории вы можете не понять, почему медитация иногда не даёт результата. С ней — будете видеть свои истинные мотивы.', btnText: '📥 Скачать PDF' },
             { type: 'final_bonus', content: '🎁 Сам бонус — вот он\n\nЯ мог бы дать тебе ещё одну медитацию или подкаст. Но настоящий бонус — это понимание.\nТы уже получил его, прочитав эту главу и дойдя до этого места.\n\nА если хочешь закрепить — вот моё личное предложение:\n\nВозьми один день и проживи его, ни разу не сказав «мне надо». Только «я хочу» и «я выбираю». Посмотри, что изменится.\n\nПопробуй. Это и есть практика «Искусство БЫТЬ!» в чистом виде.\n\nС уважением и верой в твою силу,\nРуденко Михаил\nТочка опоры', btnText: '✔️ Завершить практику' }
         ];
 
@@ -393,7 +407,6 @@
             document.getElementById('homeScreen').classList.add('hidden');
             panel.classList.remove('hidden');
 
-            // Инициализация плеера, если есть аудио
             if(step.type === 'audio' || step.type === 'audio_with_text' || step.type === 'audio_with_image') {
                 const container = document.getElementById('playerContainer');
                 if(container) {
@@ -450,7 +463,6 @@
                 }
             }
 
-            // Обработчики кнопок
             document.getElementById('stepNextBtn')?.addEventListener('click', () => nextStep());
             document.getElementById('stepBackBtn')?.addEventListener('click', () => prevStep());
             document.getElementById('stepHomeBtn')?.addEventListener('click', () => goHome());
@@ -458,19 +470,15 @@
                 const nextKey = step.nextKey;
                 const nextPurchased = purchased[nextKey];
                 if(nextPurchased) {
-                    document.getElementById('nextKeyBtn')?.addEventListener('click', () => {
-                        navigateToKey(nextKey);
-                    });
+                    document.getElementById('nextKeyBtn')?.addEventListener('click', () => { navigateToKey(nextKey); });
                 } else {
-                    document.getElementById('buyNextKeyBtn')?.addEventListener('click', () => {
-                        openTributePayment(TRIBUTE_LINKS[nextKey], nextKey, nextKey==='key3'?1390:1890);
-                    });
+                    document.getElementById('buyNextKeyBtn')?.addEventListener('click', () => { openTributePayment(TRIBUTE_LINKS[nextKey], nextKey, nextKey==='key3'?1390:1890); });
                 }
                 document.getElementById('homeAfterKeyBtn')?.addEventListener('click', () => goHome());
             }
         }
 
-        // ---------- БЕСПЛАТНАЯ ВОРОНКА КЛЮЧА 1 (из старого кода) ----------
+        // ---------- БЕСПЛАТНАЯ ВОРОНКА КЛЮЧА 1 ----------
         const FREE_STEPS = [
             { type: "welcome" },
             { type: "audio", id: "setup", title: "🎧 Настройка (3 минуты)", desc: "Слушайте перед медитацией.", audioKey: "setup", nextText: "ДАЛЕЕ" },
@@ -499,7 +507,7 @@
             currentAudio1 = audio; disableNext(); return audio;
         }
         function showHome() { dynamicDiv.classList.add('hidden'); homeDiv.classList.remove('hidden'); dynamicDiv.innerHTML = ''; if(currentAudio1) { currentAudio1.pause(); currentAudio1=null; } isPlaying1=false; updateStatusUI(); }
-        function renderStep1() { /* полный код бесплатной воронки из предыдущей версии, без изменений */ 
+        function renderStep1() { 
             const step = FREE_STEPS[currentStep1];
             if(!step) { renderOffer1(); return; }
             if(step.type === 'welcome') {
@@ -509,27 +517,27 @@
                 homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden'); return;
             }
             if(step.type === 'audio') {
-                dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">${step.title}</div><div class="med-sub">${step.desc}</div><div id="playerContainer"></div><button id="nextBtn" class="btn-audio">${step.nextText}</button><div><button id="backBtn" class="back-home">← Назад</button><button id="homeAudioBtn" class="back-home">На главную</button></div></div>`;
-                const playerContainer = document.getElementById('playerContainer');
-                const nextButton = document.getElementById('nextBtn');
+                dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">${step.title}</div><div class="med-sub">${step.desc}</div><div id="playerContainer1"></div><button id="nextBtn1" class="btn-audio">${step.nextText}</button><div><button id="backBtn1" class="back-home">← Назад</button><button id="homeAudioBtn1" class="back-home">На главную</button></div></div>`;
+                const playerContainer = document.getElementById('playerContainer1');
+                const nextButton = document.getElementById('nextBtn1');
                 initCustomPlayer(AUDIO_URLS[step.audioKey], playerContainer, () => {}, nextButton);
-                document.getElementById('nextBtn').addEventListener('click', () => { if(!nextButton.disabled) { stepHistory1.push(currentStep1); currentStep1++; renderStep1(); } });
-                document.getElementById('backBtn').addEventListener('click', () => { if(stepHistory1.length) currentStep1 = stepHistory1.pop(); else if(currentStep1>0) currentStep1--; renderStep1(); });
-                document.getElementById('homeAudioBtn').addEventListener('click', showHome);
+                document.getElementById('nextBtn1').addEventListener('click', () => { if(!nextButton.disabled) { stepHistory1.push(currentStep1); currentStep1++; renderStep1(); } });
+                document.getElementById('backBtn1').addEventListener('click', () => { if(stepHistory1.length) currentStep1 = stepHistory1.pop(); else if(currentStep1>0) currentStep1--; renderStep1(); });
+                document.getElementById('homeAudioBtn1').addEventListener('click', showHome);
                 homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden'); return;
             }
             if(step.type === 'steps') {
-                dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">📝 Три шага к почти волшебству</div><div class="med-sub">1. Запишите ощущение после практики.<br>2. Спросите: «Что могу сделать, чтобы продлить состояние?» — и сделайте.<br>3. Ваш бонус: подкаст «5 врат».</div><button id="bonusBtn" class="btn-audio btn-secondary">🎁 Забрать бонус-подкаст</button><button id="offerBtn" class="btn-audio">→ КЛЮЧИ</button><div><button id="backStepsBtn" class="back-home">← Назад</button><button id="homeStepsBtn" class="back-home">На главную</button></div></div>`;
-                document.getElementById('bonusBtn')?.addEventListener('click', () => { const bonusCard = document.createElement('div'); bonusCard.className = 'meditation-card'; bonusCard.innerHTML = `<div class="med-title">🎁 Бонус: подкаст «5 врат»</div><div id="bonusPlayer"></div><button class="back-home" id="closeBonus">Закрыть</button>`; dynamicDiv.innerHTML = ''; dynamicDiv.appendChild(bonusCard); const fakeNext = document.createElement('button'); fakeNext.style.display = 'none'; initCustomPlayer(AUDIO_URLS.bonus, document.getElementById('bonusPlayer'), () => {}, fakeNext); document.getElementById('closeBonus')?.addEventListener('click', () => renderStep1()); });
-                document.getElementById('offerBtn')?.addEventListener('click', () => renderOffer1());
-                document.getElementById('backStepsBtn')?.addEventListener('click', () => { if(stepHistory1.length) currentStep1 = stepHistory1.pop(); else if(currentStep1>0) currentStep1--; renderStep1(); });
-                document.getElementById('homeStepsBtn')?.addEventListener('click', showHome);
+                dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">📝 Три шага к почти волшебству</div><div class="med-sub">1. Запишите ощущение после практики.<br>2. Спросите: «Что могу сделать, чтобы продлить состояние?» — и сделайте.<br>3. Ваш бонус: подкаст «5 врат».</div><button id="bonusBtn1" class="btn-audio btn-secondary">🎁 Забрать бонус-подкаст</button><button id="offerBtn1" class="btn-audio">→ КЛЮЧИ</button><div><button id="backStepsBtn1" class="back-home">← Назад</button><button id="homeStepsBtn1" class="back-home">На главную</button></div></div>`;
+                document.getElementById('bonusBtn1')?.addEventListener('click', () => { const bonusCard = document.createElement('div'); bonusCard.className = 'meditation-card'; bonusCard.innerHTML = `<div class="med-title">🎁 Бонус: подкаст «5 врат»</div><div id="bonusPlayer"></div><button class="back-home" id="closeBonus">Закрыть</button>`; dynamicDiv.innerHTML = ''; dynamicDiv.appendChild(bonusCard); const fakeNext = document.createElement('button'); fakeNext.style.display = 'none'; initCustomPlayer(AUDIO_URLS.bonus, document.getElementById('bonusPlayer'), () => {}, fakeNext); document.getElementById('closeBonus')?.addEventListener('click', () => renderStep1()); });
+                document.getElementById('offerBtn1')?.addEventListener('click', () => renderOffer1());
+                document.getElementById('backStepsBtn1')?.addEventListener('click', () => { if(stepHistory1.length) currentStep1 = stepHistory1.pop(); else if(currentStep1>0) currentStep1--; renderStep1(); });
+                document.getElementById('homeStepsBtn1')?.addEventListener('click', showHome);
                 homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
             }
         }
         function renderOffer1() {
-            dynamicDiv.innerHTML = `<div class="meditation-card offer-card"><div class="med-title">🔑 Остальные 3 ключа</div><div class="med-sub">✨ Ключ 2. Золотое сияние — 890 ₽<br>🧘 Ключ 3. Искусство быть — 1390 ₽<br>🌱 Ключ 4. Субстрат жизненности — 1890 ₽<br><br>🎁 Все три ключа (2+3+4) — 2990 ₽ (экономия 1480 ₽)</div><button id="offerHome" class="back-home">← на главную</button></div>`;
-            document.getElementById('offerHome')?.addEventListener('click', showHome);
+            dynamicDiv.innerHTML = `<div class="meditation-card offer-card"><div class="med-title">🔑 Остальные 3 ключа</div><div class="med-sub">✨ Ключ 2. Золотое сияние — 890 ₽<br>🧘 Ключ 3. Искусство быть — 1390 ₽<br>🌱 Ключ 4. Субстрат жизненности — 1890 ₽<br><br>🎁 Все три ключа (2+3+4) — 2990 ₽ (экономия 1480 ₽)</div><button id="offerHome1" class="back-home">← на главную</button></div>`;
+            document.getElementById('offerHome1')?.addEventListener('click', showHome);
             homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
         }
 
@@ -559,6 +567,9 @@
         }
         document.getElementById('buyAllBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.all, 'all', 2990));
         document.getElementById('donateBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.donate, null, null));
+
+        // Запускаем проверку прав администратора после загрузки страницы
+        setTimeout(grantAdminAccess, 1000);
         updateStatusUI();
         if(window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
     </script>
