@@ -225,7 +225,6 @@
                 if (response.ok) {
                     alert(`✅ Тестовый вебхук отправлен. Ожидание подтверждения...`);
                     startLongPolling(paymentId, 'key2');
-                    startLongPolling(paymentId, 'key3');
                 } else {
                     alert('❌ Ошибка отправки тестового вебхука');
                 }
