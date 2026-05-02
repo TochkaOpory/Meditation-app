@@ -28,6 +28,14 @@
         .status-soon { color: #B29A64; }
         .btn-donate { background: transparent; border: 1px solid #C6A43B; color: #C6A43B; font-weight: 600; padding: 10px 20px; border-radius: 60px; font-size: 14px; cursor: pointer; width: 100%; margin: 30px 0 10px; transition: 0.2s; }
         .btn-donate:hover { background: rgba(198,164,59,0.1); }
+
+        .test-payment-btn {
+            background: #8BAA6E;
+            color: white;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
         .meditation-card { background: rgba(255, 251, 240, 0.96); backdrop-filter: blur(4px); border-radius: 48px; padding: 24px; margin: 16px 0; border: 1px solid #F2E5CD; box-shadow: 0 8px 30px rgba(0,0,0,0.05); animation: fadeScale 0.25s ease; }
         @keyframes fadeScale { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
         .med-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 600; color: #C6A43B; margin-bottom: 8px; }
@@ -74,7 +82,7 @@
         <div id="dynamicPanel" class="hidden"></div>
     </div>
     <script>
-        // ------------------- МАНДАЛА -------------------
+        // ------------------- МАНДАЛА (без изменений) -------------------
         const canvas = document.getElementById('mandalaCanvas');
         let ctx = canvas.getContext('2d');
         let angle = 0;
@@ -336,6 +344,7 @@
             return [];
         }
 
+        // ---------- ИСПРАВЛЕННЫЕ ШАГИ ДЛЯ KEY2 (картинки по кнопке) ----------
         const KEY2_STEPS = [
             { type: 'welcome', content: '✅ Доступ открыт!\n\nВы приобрели ключ 2 «Не волшебная таблетка, но близко».\n\nСначала прослушайте короткий подкаст — он настроит вас на практику.\nЗатем медитация (основная).\nПосле медитации — глубокий подкаст для закрепления.' },
             { type: 'audio_with_text', audio: 'https://files.catbox.moe/ps8v5c.mp3', title: '🎧 Подкаст: сохранять или развивать', text: '✨ Сфера и Стержень\n\nВ этой практике мы работаем с двумя ключевыми элементами, которые отвечают за синхронность и равновесие во время взаимодействия с окружающим миром.\n\n🌟 Сфера над головой — для развития. Это ваш энергетический «переводчик». Она помогает: принимать информацию извне без искажений, видеть ситуации объёмно, развивать интуицию и гибкость. Сфера работает как антенна. Чем она чище и активнее, тем точнее вы «считываете» мир и своё место в нём.\n\n🕯️ Стержень — для сохранения. Это ваша внутренняя ось. Он даёт: устойчивость в конфликтах и стрессах, способность не терять себя в толпе и в отношениях, сохранение энергии, когда вокруг хаос. Стержень — это то, что держит вас вертикально, когда всё идёт не так.\n\n🌀 Как они работают вместе: Сфера принимает. Стержень удерживает. Без сферы вы слепы. Без стержня — разваливаетесь. Их баланс даёт синхронность: вы начинаете оказываться в нужном месте в нужное время, а люди и обстоятельства перестают выбивать из колеи.', btnText: '▶ Прослушать подкаст' },
@@ -345,6 +354,7 @@
             { type: 'next_key_prompt', nextKey: 'key3' }
         ];
 
+        // ---------- ИСПРАВЛЕННЫЕ ШАГИ ДЛЯ KEY3 (медитация → вопросы → подкаст) ----------
         const KEY3_STEPS = [
             { type: 'welcome', content: '✅ Доступ открыт!\n\nВы приобрели ключ 3 «Не волшебная таблетка, но близко».\n\n🧘 Что такое «Искусство быть»?\n\nЭто медитация-осмысление. Она работает с тремя сферами на стержне (живот, грудь, голова) и тремя внешними объёмами (тело, комната, Вселенная). Но главное — она учит присутствовать без маски.\n\n«Когда вы ощущаете золотое сияние внутри и снаружи, вы перестаёте быть функцией. Вы становитесь человеком, который может включить любую роль, но не застревать в ней.»\n\n• Осознание трёх сфер — выживание, контакт, познание — и их баланс\n• Практика «снять скафандр» — перестать бояться чужой энергии\n• Как отличить свои желания от навязанных («Я хочу» vs «Мне надо»)\n• Упражнение из книги: просветить свой кокон и увидеть, какие программы записаны на нём' },
             { type: 'audio_with_text', audio: 'https://files.catbox.moe/cg6m4d.mp3', title: '🎧 Подкаст: Искусство быть', text: 'Это не просто медитация. Это встреча с собой за пределами ролей.\n\nВы когда-нибудь ловили себя на мысли: «Я играю роль, а где настоящий я?»\nНа работе — один, дома — другой, с друзьями — третий. И внутри — пустота, потому что ни одна роль не совпадает с тем, что вы чувствуете на самом деле.\n\nИскусство БЫТЬ - есть практика, которая стирает эти границы.', btnText: '🎧 Прослушать подкаст' },
@@ -369,7 +379,7 @@
             { type: 'final_bonus', content: '🎁 Сам бонус — вот он\n\nЯ мог бы дать тебе ещё одну медитацию или подкаст. Но настоящий бонус — это понимание.\nТы уже получил его, прочитав эту главу и дойдя до этого места.\n\nА если хочешь закрепить — вот моё личное предложение:\n\nВозьми один день и проживи его, ни разу не сказав «мне надо». Только «я хочу» и «я выбираю». Посмотри, что изменится.\n\nПопробуй. Это и есть практика «Искусство БЫТЬ!» в чистом виде.\n\nС уважением и верой в твою силу,\nРуденко Михаил\nТочка опоры', btnText: '✔️ Завершить практику' }
         ];
 
-        // ---------- ОТРИСОВКА ШАГА ----------
+        // ---------- ОТРИСОВКА ШАГА (с поддержкой скрытых картинок) ----------
         function renderStepContent(step, keyId) {
             const panel = document.getElementById('dynamicPanel');
             let html = '<div class="meditation-card">';
@@ -388,9 +398,13 @@
                 html += `<button id="stepNextBtn" class="btn-audio">${step.btnText || 'Далее'}</button>`;
             }
             else if(step.type === 'images_with_text') {
+                // Картинки скрыты, показываются по кнопке
                 html += `<div class="med-title">🖼️ Картинки</div><div class="med-sub">${step.text.replace(/\n/g,'<br>')}</div>`;
+                html += `<button id="showImagesBtn" class="btn-audio btn-secondary">${step.btnText || 'Показать картинки'}</button>`;
+                html += `<div id="hiddenImages" style="display:none;">`;
                 step.images.forEach(src => { html += `<div class="image-container"><img src="${src}"></div>`; });
-                html += `<button id="stepNextBtn" class="btn-audio">${step.btnText || 'Далее'}</button>`;
+                html += `</div>`;
+                html += `<button id="stepNextBtn" class="btn-audio" style="margin-top:20px;">Далее →</button>`;
             }
             else if(step.type === 'quiz') {
                 html += `<div class="med-title">📝 Осмысление</div><div class="med-sub">${step.text.replace(/\n/g,'<br>')}</div>`;
@@ -425,6 +439,24 @@
             document.getElementById('homeScreen').classList.add('hidden');
             panel.classList.remove('hidden');
 
+            // Обработчик показа скрытых картинок
+            if(step.type === 'images_with_text') {
+                const showBtn = document.getElementById('showImagesBtn');
+                const hiddenDiv = document.getElementById('hiddenImages');
+                if(showBtn && hiddenDiv) {
+                    showBtn.addEventListener('click', () => {
+                        if(hiddenDiv.style.display === 'none') {
+                            hiddenDiv.style.display = 'block';
+                            showBtn.textContent = 'Скрыть картинки';
+                        } else {
+                            hiddenDiv.style.display = 'none';
+                            showBtn.textContent = step.btnText || 'Показать картинки';
+                        }
+                    });
+                }
+            }
+
+            // Инициализация плеера для аудио-шагов
             if(step.type === 'audio' || step.type === 'audio_with_text' || step.type === 'audio_with_image') {
                 const container = document.getElementById('playerContainer');
                 if(container) {
@@ -478,10 +510,11 @@
                     });
                     seekBar.addEventListener('input', () => { audio.currentTime = parseFloat(seekBar.value); });
                     speedSelect.addEventListener('change', () => { audio.playbackRate = parseFloat(speedSelect.value); });
-                    activeAudio = audio; // сохраняем глобальную ссылку
+                    activeAudio = audio;
                 }
             }
 
+            // Общие обработчики кнопок
             document.getElementById('stepNextBtn')?.addEventListener('click', () => nextStep());
             document.getElementById('stepBackBtn')?.addEventListener('click', () => prevStep());
             document.getElementById('stepHomeBtn')?.addEventListener('click', () => goHome());
@@ -533,6 +566,21 @@
             dynamicDiv.innerHTML = ''; 
             isPlaying1=false; 
             updateStatusUI(); 
+            // Добавляем кнопку тестового платежа, если администратор
+            const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+            if (userId === 879043180 && !document.getElementById('testPaymentBtn')) {
+                const testBtn = document.createElement('button');
+                testBtn.id = 'testPaymentBtn';
+                testBtn.className = 'btn-buy-all test-payment-btn';
+                testBtn.innerText = '🧪 Тестовая оплата (открыть ключ 2)';
+                testBtn.style.marginTop = '12px';
+                testBtn.addEventListener('click', () => {
+                    if (confirm('Симулировать успешную оплату ключа 2?')) {
+                        purchaseKey('key2');
+                    }
+                });
+                homeDiv.appendChild(testBtn);
+            }
         }
         function renderStep1() { 
             const step = FREE_STEPS[currentStep1];
