@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Точка опоры | Не волшебная таблетка, но близко</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #FEF9EF; font-family: 'Inter', sans-serif; color: #2C2B28; min-height: 100vh; padding: 24px 20px 60px; position: relative; overflow-x: hidden; }
@@ -168,8 +168,9 @@
         };
 
         // === АВТОМАТИЧЕСКОЕ ОТКРЫТИЕ КЛЮЧЕЙ ДЛЯ ADMIN (Telegram ID 879043180) ===
-        // Используем функцию, которая будет вызвана после полной инициализации WebApp
+        let adminAccessGranted = false;
         function grantAdminAccess() {
+            if (adminAccessGranted) return;
             try {
                 const webapp = window.Telegram?.WebApp;
                 if (webapp && webapp.initDataUnsafe && webapp.initDataUnsafe.user) {
@@ -186,6 +187,7 @@
                             updateStatusUI();
                             console.log('✅ Администратор: все ключи открыты');
                         }
+                        adminAccessGranted = true;
                     } else {
                         console.log('Обычный пользователь, ID:', userId);
                     }
@@ -239,10 +241,20 @@
             else if(keyId === 'key3') { completed.key3 = true; saveCompleted(); alert('Поздравляю! КЛЮЧ 3 пройден. Теперь доступен КЛЮЧ 4.'); }
         }
 
-        // ---------- НАВИГАЦИЯ ПО КЛЮЧАМ 2-4 ----------
+        // ---------- НАВИГАЦИЯ ПО КЛЮЧАМ 2-4 (с остановкой аудио) ----------
         let currentPath = null;
+        let activeAudio = null; // глобальная ссылка на текущий аудио-элемент
+        
+        function stopActiveAudio() {
+            if (activeAudio) {
+                activeAudio.pause();
+                activeAudio = null;
+            }
+        }
+        
         function navigateToKey(keyId) {
             if(!purchased[keyId]) { alert('Доступ закрыт'); return; }
+            stopActiveAudio();
             let saved = localStorage.getItem(`key_${keyId}_progress`);
             if(saved) {
                 let prog = JSON.parse(saved);
@@ -291,6 +303,7 @@
         }
         function nextStep() {
             if(!currentPath) return;
+            stopActiveAudio(); // останавливаем аудио перед переходом
             currentPath.history.push(currentPath.stepIndex);
             currentPath.stepIndex++;
             saveCurrentProgress();
@@ -298,6 +311,7 @@
         }
         function prevStep() {
             if(!currentPath) return;
+            stopActiveAudio();
             if(currentPath.history.length > 0) {
                 currentPath.stepIndex = currentPath.history.pop();
                 saveCurrentProgress();
@@ -310,7 +324,10 @@
                 showHome();
             }
         }
-        function goHome() { showHome(); }
+        function goHome() { 
+            stopActiveAudio();
+            showHome(); 
+        }
 
         function getStepsForKey(keyId) {
             if(keyId === 'key2') return KEY2_STEPS;
@@ -461,6 +478,7 @@
                     });
                     seekBar.addEventListener('input', () => { audio.currentTime = parseFloat(seekBar.value); });
                     speedSelect.addEventListener('change', () => { audio.playbackRate = parseFloat(speedSelect.value); });
+                    activeAudio = audio; // сохраняем глобальную ссылку
                 }
             }
 
@@ -507,7 +525,15 @@
             speedSelect.addEventListener('change', () => { audio.playbackRate = parseFloat(speedSelect.value); });
             currentAudio1 = audio; disableNext(); return audio;
         }
-        function showHome() { dynamicDiv.classList.add('hidden'); homeDiv.classList.remove('hidden'); dynamicDiv.innerHTML = ''; if(currentAudio1) { currentAudio1.pause(); currentAudio1=null; } isPlaying1=false; updateStatusUI(); }
+        function showHome() { 
+            stopActiveAudio();
+            if(currentAudio1) { currentAudio1.pause(); currentAudio1=null; }
+            dynamicDiv.classList.add('hidden'); 
+            homeDiv.classList.remove('hidden'); 
+            dynamicDiv.innerHTML = ''; 
+            isPlaying1=false; 
+            updateStatusUI(); 
+        }
         function renderStep1() { 
             const step = FREE_STEPS[currentStep1];
             if(!step) { renderOffer1(); return; }
@@ -547,6 +573,7 @@
             card.addEventListener('click', (e) => {
                 const keyId = card.dataset.key;
                 if(keyId === 'key1') {
+                    stopActiveAudio();
                     currentStep1 = 0; stepHistory1 = []; renderStep1();
                 } else if(keyId === 'key2') {
                     if(purchased.key2) navigateToKey('key2');
@@ -561,6 +588,7 @@
             });
         });
         function showPurchaseScreen(keyId, price, link) {
+            stopActiveAudio();
             dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">🔒 КЛЮЧ ${keyId.slice(-1)}</div><div class="med-sub">Доступ закрыт. Откройте за ${price} ₽</div><button id="buyBtn" class="btn-audio">💳 Купить за ${price} ₽</button><button id="closeLocked" class="back-home">← на главную</button></div>`;
             document.getElementById('buyBtn')?.addEventListener('click', () => openTributePayment(link, keyId, parseInt(price)));
             document.getElementById('closeLocked')?.addEventListener('click', showHome);
