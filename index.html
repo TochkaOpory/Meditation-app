@@ -241,25 +241,26 @@
 
         // ========== ТЕСТОВАЯ ОПЛАТА (ПРЯМОЙ ВЕБХУК) ==========
         async function simulatePaymentViaWebhook() {
-            const paymentId = Date.now().toString();
-            try {
-                const response = await fetch(`${WORKER_URL}/webhook`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: paymentId })
-                });
-                if (response.ok) {
-                    alert(`✅ Тестовый вебхук отправлен (${paymentId}). Ожидание...`);
-                    startLongPolling(paymentId, 'key2');
-                    startLongPolling(paymentId, 'key3');
-                } else {
-                    alert('❌ Ошибка отправки тестового вебхука');
-                }
-            } catch (err) {
-                console.error(err);
-                alert('❌ Не удалось отправить тестовый вебхук');
-            }
+    const paymentId = Date.now().toString();
+    try {
+        const response = await fetch(`${WORKER_URL}/webhook`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: paymentId })
+        });
+        if (response.ok) {
+            alert(`✅ Тестовый вебхук отправлен (${paymentId}). Ожидание...`);
+            startLongPolling(paymentId, 'key2');
+            startLongPolling(paymentId, 'key3');
+        } else {
+            const text = await response.text();
+            alert(`❌ Ошибка отправки: ${response.status} ${text}`);
         }
+    } catch (err) {
+        console.error(err);
+        alert(`❌ Ошибка соединения: ${err.message}\nПроверьте Worker URL: ${WORKER_URL}`);
+    }
+}
 
         // ---------- НАВИГАЦИЯ ПО КЛЮЧАМ 2-4 ----------
         let currentPath = null;
