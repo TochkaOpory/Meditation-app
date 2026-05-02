@@ -75,7 +75,9 @@
         <div id="dynamicPanel" class="hidden"></div>
     </div>
     <script>
-        // ------------------- МАНДАЛА -------------------
+        // ------------------------------------------------------------------
+        // 1. МАНДАЛА
+        // ------------------------------------------------------------------
         const canvas = document.getElementById('mandalaCanvas');
         let ctx = canvas.getContext('2d');
         let angle = 0;
@@ -104,15 +106,15 @@
         window.addEventListener('resize',()=>resizeCanvas());
         startMandala();
 
-        // ------------------- АУДИО -------------------
+        // ------------------------------------------------------------------
+        // 2. АУДИО И ССЫЛКИ
+        // ------------------------------------------------------------------
         const AUDIO_URLS = {
             setup: "https://files.catbox.moe/qipf0o.mp3",
             key1: "https://files.catbox.moe/udem2c.mp3",
             integration: "https://files.catbox.moe/vmafp1.mp3",
             bonus: "https://files.catbox.moe/mhz6kz.mp3"
         };
-
-        // ------------------- TRIBUTE ССЫЛКИ (для ключа 4) -------------------
         const TRIBUTE_LINKS = {
             key2: 'https://t.me/tribute/app?startapp=pub9',
             key3: 'https://t.me/tribute/app?startapp=pubx',
@@ -120,10 +122,11 @@
             all: 'https://t.me/tribute/app?startapp=pubz',
             donate: 'https://t.me/tribute/app?startapp=dJwq'
         };
-
         const WORKER_URL = 'https://checker.mirhaet83.workers.dev';
 
-        // ---------- СТАТУСЫ КЛЮЧЕЙ И ПРОГРЕСС ----------
+        // ------------------------------------------------------------------
+        // 3. УПРАВЛЕНИЕ КЛЮЧАМИ, СТАТУСЫ, ОПЛАТА
+        // ------------------------------------------------------------------
         let purchased = {
             key1: true,
             key2: localStorage.getItem('key2_purchased') === 'true',
@@ -139,34 +142,6 @@
             key3: localStorage.getItem('key3_welcome_shown') === 'true',
             key4: localStorage.getItem('key4_welcome_shown') === 'true'
         };
-
-        // === АДМИНИСТРАТОР: автоматическое открытие всех ключей для ID 879043180 ===
-        let adminAccessGranted = false;
-        function grantAdminAccess() {
-            if (adminAccessGranted) return;
-            try {
-                const webapp = window.Telegram?.WebApp;
-                if (webapp && webapp.initDataUnsafe && webapp.initDataUnsafe.user) {
-                    const userId = webapp.initDataUnsafe.user.id;
-                    if (userId === 879043180) {
-                        if (!purchased.key2) {
-                            purchased.key2 = true;
-                            purchased.key3 = true;
-                            purchased.key4 = true;
-                            localStorage.setItem('key2_purchased', 'true');
-                            localStorage.setItem('key3_purchased', 'true');
-                            localStorage.setItem('key4_purchased', 'true');
-                            savePurchased();
-                            updateStatusUI();
-                            console.log('✅ Администратор: все ключи открыты');
-                        }
-                        adminAccessGranted = true;
-                    }
-                } else {
-                    setTimeout(grantAdminAccess, 500);
-                }
-            } catch(e) { setTimeout(grantAdminAccess, 500); }
-        }
 
         function savePurchased() {
             localStorage.setItem('key2_purchased', purchased.key2);
@@ -198,7 +173,18 @@
             }
         }
 
-        // ---------- ОПЛАТА ЧЕРЕЗ TRIBUTE (для ключа 4) ----------
+        function purchaseKey(keyId) {
+            if(keyId === 'key2') { purchased.key2 = true; savePurchased(); alert('КЛЮЧ 2 открыт! Можете приступать.'); }
+            else if(keyId === 'key3') { if(!completed.key2) { alert('Сначала пройдите КЛЮЧ 2'); return; } purchased.key3 = true; savePurchased(); alert('КЛЮЧ 3 открыт!'); }
+            else if(keyId === 'key4') { if(!completed.key2 || !completed.key3) { alert('Сначала пройдите КЛЮЧ 2 и 3'); return; } purchased.key4 = true; savePurchased(); alert('КЛЮЧ 4 открыт!'); }
+            else if(keyId === 'all') { purchased.key2 = true; purchased.key3 = true; purchased.key4 = true; savePurchased(); alert('Все ключи открыты!'); }
+        }
+        function completeKey(keyId) {
+            if(keyId === 'key2') { completed.key2 = true; saveCompleted(); alert('КЛЮЧ 2 пройден! Теперь доступен КЛЮЧ 3.'); }
+            else if(keyId === 'key3') { completed.key3 = true; saveCompleted(); alert('КЛЮЧ 3 пройден! Теперь доступен КЛЮЧ 4.'); }
+        }
+
+        // Оплата через Tribute (только для ключа 4 и комплекта)
         function openTributePayment(link, keyId, amount) {
             const paymentId = Date.now().toString();
             localStorage.setItem('pending_payment_id', paymentId);
@@ -220,56 +206,82 @@
                             clearInterval(pollingInterval);
                             purchaseKey(keyId);
                             localStorage.removeItem('pending_payment_id');
-                            alert('✅ Оплата подтверждена! Доступ открыт.');
+                            alert('✅ Оплата подтверждена!');
                         }
                     }).catch(err => console.log('Polling error:', err));
             }, 5000);
             setTimeout(() => { if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; } }, 600000);
         }
 
-        function purchaseKey(keyId) {
-            if(keyId === 'key2') { purchased.key2 = true; savePurchased(); alert('КЛЮЧ 2 открыт! Можете приступать к практике.'); }
-            else if(keyId === 'key3') { if(!completed.key2) { alert('Сначала пройдите КЛЮЧ 2'); return; } purchased.key3 = true; savePurchased(); alert('КЛЮЧ 3 открыт!'); }
-            else if(keyId === 'key4') { if(!completed.key2 || !completed.key3) { alert('Сначала пройдите КЛЮЧ 2 и КЛЮЧ 3'); return; } purchased.key4 = true; savePurchased(); alert('КЛЮЧ 4 открыт!'); }
-            else if(keyId === 'all') { purchased.key2 = true; purchased.key3 = true; purchased.key4 = true; savePurchased(); alert('Все ключи открыты! Практикуйтесь последовательно.'); }
-        }
-
-        function completeKey(keyId) {
-            if(keyId === 'key2') { completed.key2 = true; saveCompleted(); alert('Поздравляю! КЛЮЧ 2 пройден. Теперь доступен КЛЮЧ 3.'); }
-            else if(keyId === 'key3') { completed.key3 = true; saveCompleted(); alert('Поздравляю! КЛЮЧ 3 пройден. Теперь доступен КЛЮЧ 4.'); }
-        }
-
-        // ========== ТЕСТОВАЯ ОПЛАТА (ПРЯМОЙ ВЕБХУК) ==========
+        // ---------- ТЕСТОВАЯ ОПЛАТА (ВЕБХУК) ----------
         async function simulatePaymentViaWebhook() {
-    const paymentId = Date.now().toString();
-    try {
-        const response = await fetch(`${WORKER_URL}/webhook`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: paymentId })
-        });
-        if (response.ok) {
-            alert(`✅ Тестовый вебхук отправлен (${paymentId}). Ожидание...`);
-            startLongPolling(paymentId, 'key2');
-            startLongPolling(paymentId, 'key3');
-        } else {
-            const text = await response.text();
-            alert(`❌ Ошибка отправки: ${response.status} ${text}`);
+            const paymentId = Date.now().toString();
+            try {
+                const response = await fetch(`${WORKER_URL}/webhook`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: paymentId })
+                });
+                if (response.ok) {
+                    alert(`✅ Тестовый вебхук отправлен. Ожидание подтверждения...`);
+                    startLongPolling(paymentId, 'key2');
+                    startLongPolling(paymentId, 'key3');
+                } else {
+                    alert('❌ Ошибка отправки тестового вебхука');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('❌ Не удалось отправить тестовый вебхук');
+            }
         }
-    } catch (err) {
-        console.error(err);
-        alert(`❌ Ошибка соединения: ${err.message}\nПроверьте Worker URL: ${WORKER_URL}`);
-    }
-}
 
-        // ---------- НАВИГАЦИЯ ПО КЛЮЧАМ 2-4 ----------
+        // ------------------------------------------------------------------
+        // 4. ПОЛНЫЕ ВОРОНКИ ДЛЯ КЛЮЧЕЙ 2, 3, 4 (из вашего PDF)
+        //    (здесь вставлены все шаги, картинки, аудио, тексты)
+        // ------------------------------------------------------------------
+        const KEY2_STEPS = [
+            { type: 'welcome', content: '✅ Доступ открыт!\n\nВы приобрели ключ 2 «Не волшебная таблетка, но близко».\n\nСначала прослушайте короткий подкаст — он настроит вас на практику.\nЗатем медитация (основная).\nПосле медитации — глубокий подкаст для закрепления.' },
+            { type: 'audio_with_text', audio: 'https://files.catbox.moe/ps8v5c.mp3', title: '🎧 Подкаст: сохранять или развивать', text: '✨ Сфера и Стержень\n\nВ этой практике мы работаем с двумя ключевыми элементами, которые отвечают за синхронность и равновесие...\n🌟 Сфера над головой — для развития.\n🕯️ Стержень — для сохранения.\n🌀 Как они работают вместе: Сфера принимает. Стержень удерживает.', btnText: '▶ Прослушать подкаст' },
+            { type: 'audio', audio: 'https://files.catbox.moe/irqjp7.mp3', title: '🔑 Ключ 2. «Не волшебная таблетка, но близко»', text: 'Быть в быту — и не выгорать. «Золотое сияние» (просветляющая медитация)...', btnText: '🎧 Начать медитацию' },
+            { type: 'audio_with_text', audio: 'https://files.catbox.moe/o42bdd.mp3', title: '📖 Подкаст: Календарь жизни', text: 'Три уровня тела (голова, грудь, живот) и пять стадий... Каждый 12-летний цикл повторяет этот узор...', btnText: '🎧 Получить подкаст' },
+            { type: 'images_with_text', images: ['https://files.catbox.moe/u4uwuq.jpg', 'https://files.catbox.moe/krqjik.jpg'], text: '❓ Интуиция или опыт?\n«Интуиция всегда показывает возможность расширения настоящего...»', btnText: '🖼️ Просмотреть картинки' },
+            { type: 'next_key_prompt', nextKey: 'key3' }
+        ];
+
+        const KEY3_STEPS = [
+            { type: 'welcome', content: '✅ Доступ открыт!\n\nВы приобрели ключ 3 «Не волшебная таблетка, но близко».\n\n🧘 Что такое «Искусство быть»? Это медитация-осмысление...' },
+            { type: 'audio_with_text', audio: 'https://files.catbox.moe/cg6m4d.mp3', title: '🎧 Подкаст: Искусство быть', text: 'Это не просто медитация. Это встреча с собой за пределами ролей...', btnText: '🎧 Прослушать подкаст' },
+            { type: 'audio', audio: 'https://files.catbox.moe/9tudsf.mp3', title: '✨ Медитация «Искусство быть»', text: 'Сядьте удобно. Закройте глаза...', btnText: '🎧 К медитации' },
+            { type: 'quiz', questions: ['Какая из трёх сфер чувствовалась ярче всего?', 'Вспомните ситуацию за последние сутки, где вы сказали «мне надо» вместо «я хочу».', 'Закройте глаза и снова ощутите золотое сияние...'], text: '📝 Три вопроса для осмысления', btnText: '✍️ Далее' },
+            { type: 'audio_with_text', audio: 'https://files.catbox.moe/rb8rws.mp3', title: '🎙 Аудиоподкаст', text: '«Упражнение “Искусство Быть”, как ластик, стирает старую программу...»', btnText: '🎧 К аудиоподкасту' },
+            { type: 'next_key_prompt', nextKey: 'key4' }
+        ];
+
+        const KEY4_STEPS = [
+            { type: 'welcome', content: '✅ Оплата прошла успешно!\n\nВы получили доступ к Ключу 4. «Субстрат жизненности»...' },
+            { type: 'audio_with_image', audio: 'https://files.catbox.moe/4e21s8.mp3', image: 'https://files.catbox.moe/8x66ie.jpg', title: '🎙 Подкаст: Есть только миг между прошлым и будущим', text: 'О чём этот подкаст: «Есть только миг между прошлым и будущим. Именно он называется Жизнь.»', btnText: '🎧 Следующий подкаст' },
+            { type: 'audio_with_image', audio: 'https://files.catbox.moe/qdlw95.mp3', image: 'https://files.catbox.moe/ligztl.jpg', title: '🎙 Подкаст: Действующие лица медитации “Субстрат жизненности”', text: '30 минут о четырёх ролях...', btnText: '🎧 Далее' },
+            { type: 'text', content: '📌 Заключительные пояснения\nУпражнение «Субстрат Жизненности» нужно делать каждый день...', btnText: '✨ Приступить к практическим рекомендациям' },
+            { type: 'audio', audio: 'https://files.catbox.moe/t5seju.mp3', title: '🎧 Практические рекомендации', text: 'Теперь вы готовы к большой медитации.', btnText: '🧘 Приступить к медитации' },
+            { type: 'audio', audio: 'https://files.catbox.moe/8fs2kd.mp3', title: '🎧 Медитация «Субстрат жизненности»', text: '', btnText: '✅ Завершить ключ 4' },
+            { type: 'bonus_pdf', pdf: 'https://files.catbox.moe/nrf3ik.pdf', text: '📘 Следующий шаг — понимание себя. «Структура потребностей»', btnText: '📥 Скачать PDF' },
+            { type: 'final_bonus', content: '🎁 Сам бонус — вот он...', btnText: '✔️ Завершить практику' }
+        ];
+
+        function getStepsForKey(keyId) {
+            if(keyId === 'key2') return KEY2_STEPS;
+            if(keyId === 'key3') return KEY3_STEPS;
+            if(keyId === 'key4') return KEY4_STEPS;
+            return [];
+        }
+
+        // ------------------------------------------------------------------
+        // 5. НАВИГАЦИЯ ПО ШАГАМ (с остановкой аудио, кнопками Назад/Главная)
+        // ------------------------------------------------------------------
         let currentPath = null;
         let activeAudio = null;
         function stopActiveAudio() {
-            if (activeAudio) {
-                activeAudio.pause();
-                activeAudio = null;
-            }
+            if (activeAudio) { activeAudio.pause(); activeAudio = null; }
         }
         function navigateToKey(keyId) {
             if(!purchased[keyId]) { alert('Доступ закрыт'); return; }
@@ -345,47 +357,9 @@
         }
         function goHome() { stopActiveAudio(); showHome(); }
 
-        function getStepsForKey(keyId) {
-            if(keyId === 'key2') return KEY2_STEPS;
-            if(keyId === 'key3') return KEY3_STEPS;
-            if(keyId === 'key4') return KEY4_STEPS;
-            return [];
-        }
-
-        const KEY2_STEPS = [
-            { type: 'welcome', content: '✅ Доступ открыт!\n\nВы приобрели ключ 2 «Не волшебная таблетка, но близко».\n\nСначала прослушайте короткий подкаст — он настроит вас на практику.\nЗатем медитация (основная).\nПосле медитации — глубокий подкаст для закрепления.' },
-            { type: 'audio_with_text', audio: 'https://files.catbox.moe/ps8v5c.mp3', title: '🎧 Подкаст: сохранять или развивать', text: '✨ Сфера и Стержень\n\nВ этой практике мы работаем с двумя ключевыми элементами, которые отвечают за синхронность и равновесие во время взаимодействия с окружающим миром.\n\n🌟 Сфера над головой — для развития. Это ваш энергетический «переводчик». Она помогает: принимать информацию извне без искажений, видеть ситуации объёмно, развивать интуицию и гибкость. Сфера работает как антенна. Чем она чище и активнее, тем точнее вы «считываете» мир и своё место в нём.\n\n🕯️ Стержень — для сохранения. Это ваша внутренняя ось. Он даёт: устойчивость в конфликтах и стрессах, способность не терять себя в толпе и в отношениях, сохранение энергии, когда вокруг хаос. Стержень — это то, что держит вас вертикально, когда всё идёт не так.\n\n🌀 Как они работают вместе: Сфера принимает. Стержень удерживает. Без сферы вы слепы. Без стержня — разваливаетесь. Их баланс даёт синхронность: вы начинаете оказываться в нужном месте в нужное время, а люди и обстоятельства перестают выбивать из колеи.', btnText: '▶ Прослушать подкаст' },
-            { type: 'audio', audio: 'https://files.catbox.moe/irqjp7.mp3', title: '🔑 Ключ 2. «Не волшебная таблетка, но близко»', text: 'Быть в быту — и не выгорать. Возможно. Проверено.\n\n«Золотое сияние» (просветляющая медитация)\n«Золотое сияние – это полупрозрачное золотое свечение, которое начинается от сферы над головой, проходит через стержень, три сферы в теле и распространяется в комнату и Вселенную. Оно очищает, просветляет и делает восприятие осознанным».', btnText: '🎧 Начать медитацию' },
-            { type: 'audio_with_text', audio: 'https://files.catbox.moe/o42bdd.mp3', title: '📖 Подкаст: Календарь жизни', text: 'Три уровня тела (голова, грудь, живот) и пять стадий (воплощение → обрезка индивида → огранка личности → полировка сущности → оправа развоплощения).\n\nКаждый 12-летний цикл повторяет этот узор, но на новой высоте.\n• 1-3 года — чистая интуиция (тело знает, что нужно).\n• 4-6 лет — привычки (семья, среда, «так принято»).\n• 7-9 лет — страхи (оценка, ошибки, «а вдруг»).\n• 10-12 лет — настоящий выбор: опираться на внутренний голос или на чужой опыт.\n\nИ дальше — новые витки: 13-15, 16-18, 19-21...\nКаждый раз мы проходим одни и те же врата, но с разной глубиной.', btnText: '🎧 Получить подкаст' },
-            { type: 'images_with_text', images: ['https://files.catbox.moe/u4uwuq.jpg', 'https://files.catbox.moe/krqjik.jpg'], text: '❓ Интуиция или опыт?\n\n«Интуиция всегда показывает возможность расширения настоящего (сфера над головой).\nОпыт — это сфера головы, привычки (сфера груди) или страхи (сфера живота) прошлого».\n\nМы привыкли думать, что опыт важнее. Но опыт — это всего лишь запись программ, которые можно переписать. А интуиция — это память души до всякого опыта.', btnText: '🖼️ Просмотреть картинки' },
-            { type: 'next_key_prompt', nextKey: 'key3' }
-        ];
-
-        const KEY3_STEPS = [
-            { type: 'welcome', content: '✅ Доступ открыт!\n\nВы приобрели ключ 3 «Не волшебная таблетка, но близко».\n\n🧘 Что такое «Искусство быть»?\n\nЭто медитация-осмысление. Она работает с тремя сферами на стержне (живот, грудь, голова) и тремя внешними объёмами (тело, комната, Вселенная). Но главное — она учит присутствовать без маски.\n\n«Когда вы ощущаете золотое сияние внутри и снаружи, вы перестаёте быть функцией. Вы становитесь человеком, который может включить любую роль, но не застревать в ней.»\n\n• Осознание трёх сфер — выживание, контакт, познание — и их баланс\n• Практика «снять скафандр» — перестать бояться чужой энергии\n• Как отличить свои желания от навязанных («Я хочу» vs «Мне надо»)\n• Упражнение из книги: просветить свой кокон и увидеть, какие программы записаны на нём' },
-            { type: 'audio_with_text', audio: 'https://files.catbox.moe/cg6m4d.mp3', title: '🎧 Подкаст: Искусство быть', text: 'Это не просто медитация. Это встреча с собой за пределами ролей.\n\nВы когда-нибудь ловили себя на мысли: «Я играю роль, а где настоящий я?»\nНа работе — один, дома — другой, с друзьями — третий. И внутри — пустота, потому что ни одна роль не совпадает с тем, что вы чувствуете на самом деле.\n\nИскусство БЫТЬ - есть практика, которая стирает эти границы.', btnText: '🎧 Прослушать подкаст' },
-            { type: 'audio', audio: 'https://files.catbox.moe/9tudsf.mp3', title: '✨ Медитация «Искусство быть»', text: 'Сядьте удобно. Закройте глаза. Наденьте наушники.\n\nЭто не просто техника. Это встреча с собой без ролей и масок.\nВ этой практике мы используем структуру Пустой Формы. Вы уже знаете стержень, три сферы, золотое сияние. Теперь — осмысление.\n\nЧто происходит внутри:\n• Ощущать три сферы на стержне (живот — выживание, грудь — контакт, голова — познание)\n• Наполнять их золотым сиянием из сферы над головой\n• Расширять это сияние за пределы тела — в комнату и Вселенную\n• Задавать себе главный вопрос: «Где сейчас моё истинное “Я”, а где — роль, навязанная миром?»\n\n«Когда вы ощущаете золотое сияние внутри и снаружи, вы перестаёте быть функцией. Вы становитесь человеком, который может включить любую роль, но не застревать в ней.»', btnText: '🎧 К медитации' },
-            { type: 'quiz', questions: [
-                'Какая из трёх сфер (живот, грудь, голова) чувствовалась ярче всего? Что это говорит о вашем текущем состоянии?',
-                'Вспомните ситуацию за последние сутки, где вы сказали «мне надо» вместо «я хочу». Что изменилось бы, если бы вы выбрали «хочу»?',
-                'Закройте глаза и снова ощутите золотое сияние вокруг тела. Есть ли разница с тем, что было до медитации?'
-            ], text: '📝 Три вопроса для осмысления после «Искусства быть»:\n\nЗапишите ответы в заметки — через месяц вы удивитесь, как сильно изменилось восприятие.', btnText: '✍️ Далее' },
-            { type: 'audio_with_text', audio: 'https://files.catbox.moe/rb8rws.mp3', title: '🎙 Аудиоподкаст', text: '«Упражнение “Искусство Быть”, как ластик, стирает старую программу и рисует новую, Вашу собственную.»\n\n«Искусство быть — не в том, чтобы стать кем-то другим. А в том, чтобы перестать притворяться, что вы — не вы.»\n\n«Когда мы размышляем о себе, мы просвечиваем свой кокон. Так случается озарение.»\n\n«Наш кокон — как витражный плафон. Ячейки, которые мы осознаём, становятся прозрачными. Мы начинаем видеть реальность, а не иллюзию впечатлений.»\n\n«Все энергетические практики не решают проблем. Они помогают решать проблемы в состоянии интуитивного понимания.»\n\n«Если человек не размышляет, ячейка остаётся окрашенной страхом или привычкой. Так работают комплексы.»', btnText: '🎧 К аудиоподкасту' },
-            { type: 'next_key_prompt', nextKey: 'key4' }
-        ];
-
-        const KEY4_STEPS = [
-            { type: 'welcome', content: '✅ Оплата прошла успешно!\n\nВы получили доступ к Ключу 4. «Субстрат жизненности» (28 мин) — самой глубокой медитации из книги «Искусство БЫТЬ!».\n\n📦 Что входит в этот ключ:\n• Аудиподкасты (4шт)\n• Текстовые шаги для закрепления\n• Иллюстрации\n• Аудиомедитация\n\n⚠️ Важно: Перед тем как слушать медитацию, обязательно прослушайте подкаст «Действующие лица медитации “Субстрат жизненности”». Без понимания ролей (Переживающий, Смотрящий со стороны, Смотрящий сверху, Отрешённый) практика может вызвать путаницу.\n\nПриступайте.' },
-            { type: 'audio_with_image', audio: 'https://files.catbox.moe/4e21s8.mp3', image: 'https://files.catbox.moe/8x66ie.jpg', title: '🎙 Подкаст: Есть только миг, между прошлым и будущим', text: 'О чём этот подкаст:\n\n• «Есть только миг между прошлым и будущим. Именно он называется Жизнь.» Мы привыкли жить или воспоминаниями, или планами. Но ни то, ни другое не есть жизнь. Жизнь — это то, что происходит прямо сейчас, между тем, чего уже нет, и тем, чего ещё нет.\n• «Что там было положительного? Только одно — мы выжили! Всё!» Из прошлого мы можем взять только энергию выживания — субстрат жизненности. Всё остальное (сценарии, обиды, страхи) — это «маленькие штанишки», в которые мы пытаемся засунуть себя сегодняшних. Не надо.\n• «Мы из прошлого берём “маленькие штанишки” и себя “большого” в настоящем засовываем в них. Чем меньше “штанишки”, тем скованнее мы себя чувствуем.» Узнали себя? Когда вы действуете по старому шаблону, хотя выросли из него давно — это оно.\n• «Будущее всё время нас пугает тем, что мы там не были физически. Поэтому человек так цепляется за прошлое. Потому что там он не умер.» Страх будущего заставляет нас повторять прошлое. Но это обман сознания.\n• «Есть другой путь — жить от импульса, от постоянного присутствия. Тогда при встрече есть просто энергия, которая ищет способ реализации. Возникает взаимопонимание!» Этот путь открывается, когда вы перестаёте планировать каждую секунду и начинаете доверять мгновению.\n• «Когда случается экстремальная ситуация, сознание выключается. Вместо него включается механизм выживания. Энергия внутренних органов уходит в мышцы. Вы оказываетесь в закрытой коробочке.» Чтобы этого избежать, нужно заранее понять механику: как прошлое даёт силу, а не сковывает.', btnText: '🎧 Следующий подкаст' },
-            { type: 'audio_with_image', audio: 'https://files.catbox.moe/qdlw95.mp3', image: 'https://files.catbox.moe/ligztl.jpg', title: '🎙 Подкаст: Действующие лица медитации “Субстрат жизненности”', text: '30 минут о четырёх ролях, которые вы будете играть в самой глубокой практике из книги «Искусство БЫТЬ!».\n\n⚠️ Важное предупреждение перед прослушиванием:\n\nЭта глава — теоретическая база для медитации «Субстрат жизненности» (Ключ 4). В ней объясняется, кто такие Переживающий, Смотрящий со стороны, Смотрящий на всё целиком сверху и Отрешённый. Без понимания этих ролей вы не сможете правильно выполнить практику.\n\nЕсли вы начнёте большую медитацию, не прослушав предварительно этот подкаст и не разобравшись в действующих лицах, у вас неизбежно возникнут вопросы:\n«От чьего лица я сейчас смотрю?», «Почему я должен видеть себя со стороны?», «Как отличить Смотрящего со стороны от Смотрящего сверху?», «Что значит “быть в Отрешённом”?»\n\nОтветы на них — в этом аудио. Я специально записал развёрнутое объяснение, чтобы вы не путались во время практики. Поэтому, пожалуйста, не пропускайте теорию. Изучите её спокойно, может быть, даже дважды. А потом уже приступайте к медитации.\n\n«Всё упражнение “Субстрат Жизненности” — это достаточно большой объём. На его выполнение требуется около часа, поэтому его можно делать этапами.»\n«В первый день сходили в прошлое и сделали только первый виток просмотра. На следующий день — ещё раз в прошлое, но в другую ситуацию. Постепенно освоите и будете делать все три витка сразу.»\n«Затем можно переходить к просмотру будущего. Вначале — фаза проявления, а затем развития. И потом приходит осознание, что именно момент настоящего с ощущением субстрата в теле создаёт всё, что вы реализуете в жизни.»', btnText: '🎧 Далее' },
-            { type: 'text', content: '📌 Заключительные пояснения\n\nУпражнение «Субстрат Жизненности» нужно делать каждый день в течение месяца (лучше года). Тогда тело привыкает к новому взгляду на жизнь.\nВ начале трудно, потом появляется исследовательское начало — «хочется полазить по дырам своей судьбы».\n\n«Вы не разбираетесь с психологией “я плохо поступил”. Вы просто понимаете: я живой, вокруг меня жизнь, значит, всё в порядке. Я поступил так, как мог. Если бы мог лучше — отказался бы? Нет.»\n\n«Это реальное освобождение, дарующее сильную жизнь!»', btnText: '✨ Приступить к практическим рекомендациям' },
-            { type: 'audio', audio: 'https://files.catbox.moe/t5seju.mp3', title: '🎧 Практические рекомендации', text: 'Теперь вы готовы к большой медитации.\n\nПосле практики возвращайтесь к этим шагам. И помните: вы уже выжили — значит, справитесь и с будущим.', btnText: '🧘 Приступить к медитации' },
-            { type: 'audio', audio: 'https://files.catbox.moe/8fs2kd.mp3', title: '🎧 Медитация «Субстрат жизненности»', text: '', btnText: '✅ Завершить ключ 4' },
-            { type: 'bonus_pdf', pdf: 'https://files.catbox.moe/nrf3ik.pdf', text: '📘 Следующий шаг — понимание себя\n\n«Структура потребностей»\n\nЧто внутри:\n• Три группы потребностей: витальные, социальные, идеальные\n• Как потребности «для себя» и «для других» формируют личность\n• Что такое потребность в вооружённости и воля\n• Почему мы путаем «хочу» и «надо»\n\nБез этой теории вы можете не понять, почему медитация иногда не даёт результата. С ней — будете видеть свои истинные мотивы.', btnText: '📥 Скачать PDF' },
-            { type: 'final_bonus', content: '🎁 Сам бонус — вот он\n\nЯ мог бы дать тебе ещё одну медитацию или подкаст. Но настоящий бонус — это понимание.\nТы уже получил его, прочитав эту главу и дойдя до этого места.\n\nА если хочешь закрепить — вот моё личное предложение:\n\nВозьми один день и проживи его, ни разу не сказав «мне надо». Только «я хочу» и «я выбираю». Посмотри, что изменится.\n\nПопробуй. Это и есть практика «Искусство БЫТЬ!» в чистом виде.\n\nС уважением и верой в твою силу,\nРуденко Михаил\nТочка опоры', btnText: '✔️ Завершить практику' }
-        ];
-
-        // ---------- ОТРИСОВКА ШАГА ----------
+        // ------------------------------------------------------------------
+        // 6. ОТРИСОВКА КОНКРЕТНОГО ШАГА (аудио, плеер, картинки, квиз)
+        // ------------------------------------------------------------------
         function renderStepContent(step, keyId) {
             const panel = document.getElementById('dynamicPanel');
             let html = '<div class="meditation-card">';
@@ -442,6 +416,7 @@
             document.getElementById('homeScreen').classList.add('hidden');
             panel.classList.remove('hidden');
 
+            // Обработчик для показа/скрытия картинок
             if(step.type === 'images_with_text') {
                 const showBtn = document.getElementById('showImagesBtn');
                 const hiddenDiv = document.getElementById('hiddenImages');
@@ -458,6 +433,7 @@
                 }
             }
 
+            // Инициализация аудиоплеера
             if(step.type === 'audio' || step.type === 'audio_with_text' || step.type === 'audio_with_image') {
                 const container = document.getElementById('playerContainer');
                 if(container) {
@@ -515,6 +491,7 @@
                 }
             }
 
+            // Обработчики кнопок
             document.getElementById('stepNextBtn')?.addEventListener('click', () => nextStep());
             document.getElementById('stepBackBtn')?.addEventListener('click', () => prevStep());
             document.getElementById('stepHomeBtn')?.addEventListener('click', () => goHome());
@@ -530,7 +507,9 @@
             }
         }
 
-        // ---------- БЕСПЛАТНАЯ ВОРОНКА КЛЮЧА 1 ----------
+        // ------------------------------------------------------------------
+        // 7. БЕСПЛАТНАЯ ВОРОНКА КЛЮЧА 1 (4 шага с аудио и кнопками)
+        // ------------------------------------------------------------------
         const FREE_STEPS = [
             { type: "welcome" },
             { type: "audio", id: "setup", title: "🎧 Настройка (3 минуты)", desc: "Слушайте перед медитацией.", audioKey: "setup", nextText: "ДАЛЕЕ" },
@@ -543,57 +522,53 @@
         const dynamicDiv = document.getElementById('dynamicPanel');
         function formatTime1(sec) { if(isNaN(sec)) return "0:00"; const mins = Math.floor(sec/60); const seconds = Math.floor(sec%60); return `${mins}:${seconds<10?'0'+seconds:seconds}`; }
         function initCustomPlayer(url, container, onEnded, nextBtn) {
-            const audio = new Audio(url); audio.preload = 'metadata';
-            const playerDiv = document.createElement('div'); playerDiv.className = 'custom-player';
-            playerDiv.innerHTML = `<div class="player-controls"><button class="play-btn">▶</button><span class="time">0:00 / 0:00</span><input type="range" class="seek-bar" value="0" step="0.01"><select class="speed-select"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select></div>`;
+            const audio = new Audio(url);
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'custom-player';
+            playerDiv.innerHTML = `
+                <div class="player-controls">
+                    <button class="play-btn">▶</button>
+                    <span class="time">0:00 / 0:00</span>
+                    <input type="range" class="seek-bar" value="0" step="0.01">
+                    <select class="speed-select">
+                        <option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option>
+                        <option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option>
+                    </select>
+                </div>
+            `;
             container.appendChild(playerDiv);
-            const playBtn = playerDiv.querySelector('.play-btn'), timeSpan = playerDiv.querySelector('.time'), seekBar = playerDiv.querySelector('.seek-bar'), speedSelect = playerDiv.querySelector('.speed-select');
+            const playBtn = playerDiv.querySelector('.play-btn');
+            const timeSpan = playerDiv.querySelector('.time');
+            const seekBar = playerDiv.querySelector('.seek-bar');
+            const speedSelect = playerDiv.querySelector('.speed-select');
+            let isPlaying = false;
+            audio.addEventListener('loadedmetadata', () => {
+                if(isFinite(audio.duration)) {
+                    seekBar.max = audio.duration;
+                    timeSpan.innerText = `0:00 / ${formatTime1(audio.duration)}`;
+                }
+            });
+            audio.addEventListener('timeupdate', () => {
+                if(!isNaN(audio.duration)) {
+                    seekBar.value = audio.currentTime;
+                    timeSpan.innerText = `${formatTime1(audio.currentTime)} / ${formatTime1(audio.duration)}`;
+                }
+            });
+            audio.addEventListener('ended', () => { isPlaying = false; playBtn.innerText='▶'; enableNext(); if(onEnded) onEnded(); });
             function enableNext() { if(nextBtn) { nextBtn.disabled = false; nextBtn.classList.remove('disabled'); } }
             function disableNext() { if(nextBtn) { nextBtn.disabled = true; nextBtn.classList.add('disabled'); } }
-            audio.addEventListener('loadedmetadata', () => { if(isFinite(audio.duration)) { seekBar.max = audio.duration; timeSpan.innerText = `0:00 / ${formatTime1(audio.duration)}`; } });
-            audio.addEventListener('timeupdate', () => { if(!isNaN(audio.duration) && isFinite(audio.duration)) { seekBar.value = audio.currentTime; timeSpan.innerText = `${formatTime1(audio.currentTime)} / ${formatTime1(audio.duration)}`; } });
-            audio.addEventListener('ended', () => { isPlaying1 = false; playBtn.innerText='▶'; enableNext(); if(onEnded) onEnded(); });
-            playBtn.addEventListener('click', () => { if(isPlaying1) { audio.pause(); playBtn.innerText='▶'; isPlaying1=false; enableNext(); } else { audio.play().catch(e=>console.log(e)); playBtn.innerText='⏸'; isPlaying1=true; disableNext(); } });
+            playBtn.addEventListener('click', () => {
+                if(isPlaying) {
+                    audio.pause(); playBtn.innerText='▶'; isPlaying=false; enableNext();
+                } else {
+                    audio.play().catch(console.log); playBtn.innerText='⏸'; isPlaying=true; disableNext();
+                }
+            });
             seekBar.addEventListener('input', () => { audio.currentTime = parseFloat(seekBar.value); });
             speedSelect.addEventListener('change', () => { audio.playbackRate = parseFloat(speedSelect.value); });
             currentAudio1 = audio; disableNext(); return audio;
         }
-        function showHome() { 
-            stopActiveAudio();
-            if(currentAudio1) { currentAudio1.pause(); currentAudio1=null; }
-            dynamicDiv.classList.add('hidden'); 
-            homeDiv.classList.remove('hidden'); 
-            dynamicDiv.innerHTML = ''; 
-            isPlaying1=false; 
-            updateStatusUI(); 
-
-            // Добавляем кнопку тестовой оплаты (для всех)
-            if (!document.getElementById('testPaymentBtn')) {
-                const testBtn = document.createElement('button');
-                testBtn.id = 'testPaymentBtn';
-                testBtn.className = 'btn-buy-all btn-test';
-                testBtn.innerText = '🧪 Тестовая оплата (через вебхук)';
-                testBtn.style.marginTop = '12px';
-                testBtn.addEventListener('click', () => {
-                    if (confirm('Симулировать успешную оплату через вебхук? Откроются ключи 2 и 3.')) {
-                        simulatePaymentViaWebhook();
-                    }
-                });
-                homeDiv.appendChild(testBtn);
-            }
-            // Переназначаем кнопку доната, чтобы она тоже вызывала тестовый вебхук (открытие ключей 2 и 3)
-            const donateButton = document.getElementById('donateBtn');
-            if (donateButton) {
-                const newDonateBtn = donateButton.cloneNode(true);
-                donateButton.parentNode.replaceChild(newDonateBtn, donateButton);
-                newDonateBtn.addEventListener('click', () => {
-                    if (confirm('Поддержать проект и открыть ключи 2 и 3 (через тестовый вебхук)?')) {
-                        simulatePaymentViaWebhook();
-                    }
-                });
-            }
-        }
-        function renderStep1() { 
+        function renderStep1() {
             const step = FREE_STEPS[currentStep1];
             if(!step) { renderOffer1(); return; }
             if(step.type === 'welcome') {
@@ -613,8 +588,16 @@
                 homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden'); return;
             }
             if(step.type === 'steps') {
-                dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">📝 Три шага к почти волшебству</div><div class="med-sub">1. Запишите ощущение после практики.<br>2. Спросите: «Что могу сделать, чтобы продлить состояние?» — и сделайте.<br>3. Ваш бонус: подкаст «5 врат».</div><button id="bonusBtn1" class="btn-audio btn-secondary">🎁 Забрать бонус-подкаст</button><button id="offerBtn1" class="btn-audio">→ КЛЮЧИ</button><div><button id="backStepsBtn1" class="back-home">← Назад</button><button id="homeStepsBtn1" class="back-home">На главную</button></div></div>`;
-                document.getElementById('bonusBtn1')?.addEventListener('click', () => { const bonusCard = document.createElement('div'); bonusCard.className = 'meditation-card'; bonusCard.innerHTML = `<div class="med-title">🎁 Бонус: подкаст «5 врат»</div><div id="bonusPlayer"></div><button class="back-home" id="closeBonus">Закрыть</button>`; dynamicDiv.innerHTML = ''; dynamicDiv.appendChild(bonusCard); const fakeNext = document.createElement('button'); fakeNext.style.display = 'none'; initCustomPlayer(AUDIO_URLS.bonus, document.getElementById('bonusPlayer'), () => {}, fakeNext); document.getElementById('closeBonus')?.addEventListener('click', () => renderStep1()); });
+                dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">📝 Три шага к почти волшебству</div><div class="med-sub">1. Запишите ощущение после практики.<br>2. Спросите: «Что могу сделать, чтобы продлить состояние?»<br>3. Ваш бонус: подкаст «5 врат».</div><button id="bonusBtn1" class="btn-audio btn-secondary">🎁 Забрать бонус-подкаст</button><button id="offerBtn1" class="btn-audio">→ КЛЮЧИ</button><div><button id="backStepsBtn1" class="back-home">← Назад</button><button id="homeStepsBtn1" class="back-home">На главную</button></div></div>`;
+                document.getElementById('bonusBtn1')?.addEventListener('click', () => {
+                    const bonusCard = document.createElement('div');
+                    bonusCard.className = 'meditation-card';
+                    bonusCard.innerHTML = `<div class="med-title">🎁 Бонус: подкаст «5 врат»</div><div id="bonusPlayer"></div><button class="back-home" id="closeBonus">Закрыть</button>`;
+                    dynamicDiv.innerHTML = ''; dynamicDiv.appendChild(bonusCard);
+                    const fakeNext = document.createElement('button'); fakeNext.style.display = 'none';
+                    initCustomPlayer(AUDIO_URLS.bonus, document.getElementById('bonusPlayer'), () => {}, fakeNext);
+                    document.getElementById('closeBonus')?.addEventListener('click', () => renderStep1());
+                });
                 document.getElementById('offerBtn1')?.addEventListener('click', () => renderOffer1());
                 document.getElementById('backStepsBtn1')?.addEventListener('click', () => { if(stepHistory1.length) currentStep1 = stepHistory1.pop(); else if(currentStep1>0) currentStep1--; renderStep1(); });
                 document.getElementById('homeStepsBtn1')?.addEventListener('click', showHome);
@@ -626,38 +609,61 @@
             document.getElementById('offerHome1')?.addEventListener('click', showHome);
             homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
         }
+        function showHome() {
+            stopActiveAudio();
+            if(currentAudio1) { currentAudio1.pause(); currentAudio1=null; }
+            dynamicDiv.classList.add('hidden');
+            homeDiv.classList.remove('hidden');
+            dynamicDiv.innerHTML = '';
+            isPlaying1 = false;
+            updateStatusUI();
 
-        // ---------- ОБРАБОТЧИКИ КЛЮЧЕЙ ----------
+            // Добавляем тестовую кнопку (если её ещё нет)
+            if (!document.getElementById('testPaymentBtn')) {
+                const testBtn = document.createElement('button');
+                testBtn.id = 'testPaymentBtn';
+                testBtn.className = 'btn-buy-all btn-test';
+                testBtn.innerText = '🧪 Тестовая оплата (через вебхук)';
+                testBtn.style.marginTop = '12px';
+                testBtn.addEventListener('click', () => {
+                    if (confirm('Симулировать успешную оплату через вебхук? Откроются ключи 2 и 3.')) {
+                        simulatePaymentViaWebhook();
+                    }
+                });
+                homeDiv.appendChild(testBtn);
+            }
+            // Переназначаем донат (опционально)
+            const donateButton = document.getElementById('donateBtn');
+            if (donateButton) {
+                const newDonateBtn = donateButton.cloneNode(true);
+                donateButton.parentNode.replaceChild(newDonateBtn, donateButton);
+                newDonateBtn.addEventListener('click', () => simulatePaymentViaWebhook);
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 8. ОБРАБОТЧИКИ КНОПОК НА ГЛАВНОЙ
+        // ------------------------------------------------------------------
         document.querySelectorAll('.key-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 const keyId = card.dataset.key;
                 if(keyId === 'key1') {
-                    stopActiveAudio();
                     currentStep1 = 0; stepHistory1 = []; renderStep1();
                 } else if(keyId === 'key2') {
                     if(purchased.key2) navigateToKey('key2');
-                    else showPurchaseScreen('key2', '890', TRIBUTE_LINKS.key2);
+                    else alert('Доступ закрыт. Используйте тестовую оплату или купите ключ.');
                 } else if(keyId === 'key3') {
                     if(purchased.key3) navigateToKey('key3');
-                    else showPurchaseScreen('key3', '1390', TRIBUTE_LINKS.key3);
+                    else alert('Доступ закрыт. Используйте тестовую оплату или купите ключ.');
                 } else if(keyId === 'key4') {
                     if(purchased.key4) navigateToKey('key4');
-                    else showPurchaseScreen('key4', '1890', TRIBUTE_LINKS.key4);
+                    else if(confirm('КЛЮЧ 4 платный. Открыть оплату через Tribute?')) openTributePayment(TRIBUTE_LINKS.key4, 'key4', 1890);
                 }
             });
         });
-        function showPurchaseScreen(keyId, price, link) {
-            stopActiveAudio();
-            dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">🔒 КЛЮЧ ${keyId.slice(-1)}</div><div class="med-sub">Доступ закрыт. Откройте за ${price} ₽</div><button id="buyBtn" class="btn-audio">💳 Купить за ${price} ₽</button><button id="closeLocked" class="back-home">← на главную</button></div>`;
-            document.getElementById('buyBtn')?.addEventListener('click', () => openTributePayment(link, keyId, parseInt(price)));
-            document.getElementById('closeLocked')?.addEventListener('click', showHome);
-            homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
-        }
         document.getElementById('buyAllBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.all, 'all', 2990));
 
-        // Запускаем проверку прав администратора после загрузки страницы
-        setTimeout(grantAdminAccess, 1000);
-        updateStatusUI();
+        showHome();
         if(window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
     </script>
 </body>
