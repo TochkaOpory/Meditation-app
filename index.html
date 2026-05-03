@@ -613,27 +613,27 @@
         // ------------------------------------------------------------------
         // 8. ОБРАБОТЧИКИ КНОПОК НА ГЛАВНОЙ (БЕЗОПАСНЫЕ)
         // ------------------------------------------------------------------
-        async function onKeyClick(keyId) {
-            if (keyId === 'key1') {
-                currentStep1 = 0; stepHistory1 = []; renderStep1();
-                return;
-            }
-            const allowed = await checkAccess(keyId);
-            if (!allowed) {
-                if (keyId === 'key4') {
-                    if (confirm('КЛЮЧ 4 платный. Открыть оплату через Tribute?')) {
-                        openTributePayment(TRIBUTE_LINKS.key4, 'key4');
-                    }
-                } else {
-                    alert('Доступ закрыт. Оплатите ключ через Tribute.');
-                }
-                return;
-            }
-            if (keyId === 'key2') navigateToKey('key2');
-            else if (keyId === 'key3') navigateToKey('key3');
-            else if (keyId === 'key4') navigateToKey('key4');
+   async function onKeyClick(keyId) {
+    if (keyId === 'key1') {
+        currentStep1 = 0; stepHistory1 = []; renderStep1();
+        return;
+    }
+    // Просто проверяем userStatus, который уже загружен с сервера
+    if (userStatus[keyId]) {
+        if (keyId === 'key2') navigateToKey('key2');
+        else if (keyId === 'key3') navigateToKey('key3');
+        else if (keyId === 'key4') navigateToKey('key4');
+        return;
+    }
+    // Если ключ не куплен
+    if (keyId === 'key4') {
+        if (confirm('КЛЮЧ 4 платный. Открыть оплату через Tribute?')) {
+            openTributePayment(TRIBUTE_LINKS.key4, 'key4');
         }
-
+    } else {
+        alert('Доступ закрыт. Оплатите ключ через Tribute.');
+    }
+}
         document.querySelectorAll('.key-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 const keyId = card.dataset.key;
