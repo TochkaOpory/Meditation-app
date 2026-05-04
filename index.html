@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Стили остаются без изменений – скопированы из вашего текущего файла */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #FEF9EF; font-family: 'Inter', sans-serif; color: #2C2B28; min-height: 100vh; padding: 24px 20px 60px; position: relative; overflow-x: hidden; }
         .mandala-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.35; }
@@ -44,7 +45,7 @@
         .btn-audio.disabled, .btn-audio:disabled { background: #D4C5A0; cursor: not-allowed; opacity: 0.6; transform: none; }
         .btn-audio:hover:not(:disabled) { background: #B48C2E; transform: scale(0.98); }
         .btn-secondary { background: transparent; border: 1px solid #EADCA8; color: #C6A43B; }
-        .back-home { background: none; border: none; color: #B29B65; font-size: 14px; margin-top: 20px; cursor: pointer; display: block; margin-left: auto; margin-right: auto; }
+        .back-home, .back-to-start { background: none; border: none; color: #B29B65; font-size: 14px; margin-top: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-right: 16px; }
         .offer-card { background: #FEF7E6; border-radius: 40px; padding: 20px; margin-top: 20px; }
         .note { font-size: 11px; color: #BCAA86; text-align: center; margin-top: 20px; }
         .hidden { display: none; }
@@ -74,9 +75,7 @@
         <div id="dynamicPanel" class="hidden"></div>
     </div>
     <script>
-        // ------------------------------------------------------------------
-        // 1. МАНДАЛА
-        // ------------------------------------------------------------------
+        // ------------------- МАНДАЛА (без изменений) -------------------
         const canvas = document.getElementById('mandalaCanvas');
         let ctx = canvas.getContext('2d');
         let angle = 0;
@@ -105,9 +104,7 @@
         window.addEventListener('resize',()=>resizeCanvas());
         startMandala();
 
-        // ------------------------------------------------------------------
-        // 2. КОНФИГУРАЦИЯ
-        // ------------------------------------------------------------------
+        // ------------------- КОНФИГУРАЦИЯ -------------------
         const WORKER_URL = 'https://checker.mirhaet83.workers.dev';
         const TRIBUTE_LINKS = {
             key2: 'https://t.me/tribute/app?startapp=pub9',
@@ -123,44 +120,27 @@
             bonus: "https://files.catbox.moe/mhz6kz.mp3"
         };
 
-        // ------------------------------------------------------------------
-        // 3. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (только для UI)
-        // ------------------------------------------------------------------
         let userStatus = { key2: false, key3: false, key4: false };
         let completed = { key2: false, key3: false };
         let welcomeShown = { key2: false, key3: false, key4: false };
 
-        // Функция загрузки статуса с сервера (безопасно)
         async function loadUserStatus() {
             const webApp = window.Telegram?.WebApp;
-            if (!webApp || !webApp.initData) {
-                console.warn('Telegram WebApp not available');
-                return;
-            }
+            if (!webApp || !webApp.initData) return;
             try {
-                const response = await fetch(`${WORKER_URL}/user-status?initData=${encodeURIComponent(webApp.initData)}`);
-                if (response.ok) {
-                    userStatus = await response.json();
-                    // Загружаем прогресс прохождения из localStorage (незащищённая часть)
+                const resp = await fetch(`${WORKER_URL}/user-status?initData=${encodeURIComponent(webApp.initData)}`);
+                if (resp.ok) {
+                    userStatus = await resp.json();
                     completed = JSON.parse(localStorage.getItem('completed') || '{"key2":false,"key3":false}');
                     welcomeShown = JSON.parse(localStorage.getItem('welcomeShown') || '{"key2":false,"key3":false,"key4":false}');
                     updateStatusUI();
-                } else {
-                    console.error('Failed to load user status');
                 }
-            } catch (err) {
-                console.error(err);
-            }
+            } catch(e) { console.error(e); }
         }
 
-        // Функция обновления UI (только отображение)
         function updateStatusUI() {
             const e2 = document.getElementById('key2Status');
-            if(e2) {
-                if (userStatus.key2) e2.innerHTML = '✓ открыт доступ';
-                else e2.innerHTML = '🔒 закрыт доступ';
-                e2.className = userStatus.key2 ? 'status-badge status-open' : 'status-badge status-closed';
-            }
+            if(e2) { e2.innerHTML = userStatus.key2 ? '✓ открыт доступ' : '🔒 закрыт доступ'; e2.className = userStatus.key2 ? 'status-badge status-open' : 'status-badge status-closed'; }
             const e3 = document.getElementById('key3Status');
             if(e3) {
                 if (!userStatus.key3) e3.innerHTML = '🔒 закрыт доступ';
@@ -177,18 +157,7 @@
             }
         }
 
-        // Функция проверки доступа через сервер
-        async function checkAccess(keyId) {
-            const webApp = window.Telegram?.WebApp;
-            if (!webApp || !webApp.initData) return false;
-            try {
-                const response = await fetch(`${WORKER_URL}/check-access?initData=${encodeURIComponent(webApp.initData)}&key=${keyId}`);
-                const data = await response.json();
-                return data.allowed === true;
-            } catch { return false; }
-        }
-
-        // Оплата через Tribute
+        // ------------------- ОПЛАТА И LONG POLLING -------------------
         function openTributePayment(link, keyId) {
             const paymentId = Date.now().toString();
             localStorage.setItem('pending_payment_id', paymentId);
@@ -216,165 +185,47 @@
             setTimeout(() => { if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; } }, 600000);
         }
 
-        // ------------------------------------------------------------------
-        // 4. ВОРОНКИ МЕДИТАЦИЙ (КЛЮЧИ 2, 3, 4) - ВАШИ ПОЛНЫЕ МАССИВЫ
-        // ------------------------------------------------------------------
-        const KEY2_STEPS = [
-            { type: 'welcome', content: '✅ Доступ открыт!\n\nВы приобрели ключ 2 «Не волшебная таблетка, но близко».\n\nСначала прослушайте короткий подкаст — он настроит вас на практику.\nЗатем медитация (основная).\nПосле медитации — глубокий подкаст для закрепления.' },
-            { type: 'audio_with_text', audio: 'https://files.catbox.moe/ps8v5c.mp3', title: '🎧 Подкаст: сохранять или развивать', text: '✨ Сфера и Стержень\n\nВ этой практике мы работаем с двумя ключевыми элементами, которые отвечают за синхронность и равновесие во время взаимодействия с окружающим миром.\n\n🌟 Сфера над головой — для развития. Это ваш энергетический «переводчик». Она помогает: принимать информацию извне без искажений, видеть ситуации объёмно, развивать интуицию и гибкость.\n\n🕯️ Стержень — для сохранения. Это ваша внутренняя ось. Он даёт: устойчивость в конфликтах и стрессах, способность не терять себя в толпе и в отношениях.\n\n🌀 Как они работают вместе: Сфера принимает. Стержень удерживает. Без сферы вы слепы. Без стержня — разваливаетесь.', btnText: '▶ Прослушать подкаст' },
-            { type: 'audio', audio: 'https://files.catbox.moe/irqjp7.mp3', title: '🔑 Ключ 2. «Не волшебная таблетка, но близко»', text: 'Быть в быту — и не выгорать. Возможно. Проверено.\n\n«Золотое сияние» (просветляющая медитация)\n«Золотое сияние – это полупрозрачное золотое свечение, которое начинается от сферы над головой, проходит через стержень, три сферы в теле и распространяется в комнату и Вселенную. Оно очищает, просветляет и делает восприятие осознанным».', btnText: '🎧 Начать медитацию' },
-            { type: 'audio_with_text', audio: 'https://files.catbox.moe/o42bdd.mp3', title: '📖 Подкаст: Календарь жизни', text: 'Три уровня тела (голова, грудь, живот) и пять стадий (воплощение → обрезка индивида → огранка личности → полировка сущности → оправа развоплощения).\n\nКаждый 12-летний цикл повторяет этот узор, но на новой высоте.\n• 1-3 года — чистая интуиция (тело знает, что нужно).\n• 4-6 лет — привычки (семья, среда, «так принято»).\n• 7-9 лет — страхи (оценка, ошибки, «а вдруг»).\n• 10-12 лет — настоящий выбор: опираться на внутренний голос или на чужой опыт.\n\nИ дальше — новые витки: 13-15, 16-18, 19-21...\nКаждый раз мы проходим одни и те же врата, но с разной глубиной.', btnText: '🎧 Получить подкаст' },
-            { type: 'images_with_text', images: ['https://files.catbox.moe/u4uwuq.jpg', 'https://files.catbox.moe/krqjik.jpg'], text: '❓ Интуиция или опыт?\n\n«Интуиция всегда показывает возможность расширения настоящего (сфера над головой).\nОпыт — это сфера головы, привычки (сфера груди) или страхи (сфера живота) прошлого».\n\nМы привыкли думать, что опыт важнее. Но опыт — это всего лишь запись программ, которые можно переписать. А интуиция — это память души до всякого опыта.', btnText: '🖼️ Просмотреть картинки' },
-            { type: 'next_key_prompt', nextKey: 'key3' }
-        ];
-
-        const KEY3_STEPS = [
-            { type: 'welcome', content: '✅ Доступ открыт!\n\nВы приобрели ключ 3 «Не волшебная таблетка, но близко».\n\n🧘 Что такое «Искусство быть»?\n\nЭто медитация-осмысление. Она работает с тремя сферами на стержне (живот, грудь, голова) и тремя внешними объёмами (тело, комната, Вселенная). Но главное — она учит присутствовать без маски.\n\n«Когда вы ощущаете золотое сияние внутри и снаружи, вы перестаёте быть функцией. Вы становитесь человеком, который может включить любую роль, но не застревать в ней.»\n\n• Осознание трёх сфер — выживание, контакт, познание — и их баланс\n• Практика «снять скафандр» — перестать бояться чужой энергии\n• Как отличить свои желания от навязанных («Я хочу» vs «Мне надо»)\n• Упражнение из книги: просветить свой кокон и увидеть, какие программы записаны на нём' },
-            { type: 'audio_with_text', audio: 'https://files.catbox.moe/cg6m4d.mp3', title: '🎧 Подкаст: Искусство быть', text: 'Это не просто медитация. Это встреча с собой за пределами ролей.\n\nВы когда-нибудь ловили себя на мысли: «Я играю роль, а где настоящий я?»\nНа работе — один, дома — другой, с друзьями — третий. И внутри — пустота, потому что ни одна роль не совпадает с тем, что вы чувствуете на самом деле.\n\nИскусство БЫТЬ - есть практика, которая стирает эти границы.', btnText: '🎧 Прослушать подкаст' },
-            { type: 'audio', audio: 'https://files.catbox.moe/9tudsf.mp3', title: '✨ Медитация «Искусство быть»', text: 'Сядьте удобно. Закройте глаза. Наденьте наушники.\n\nЭто не просто техника. Это встреча с собой без ролей и масок.\nВ этой практике мы используем структуру Пустой Формы. Вы уже знаете стержень, три сферы, золотое сияние. Теперь — осмысление.\n\nЧто происходит внутри:\n• Ощущать три сферы на стержне (живот — выживание, грудь — контакт, голова — познание)\n• Наполнять их золотым сиянием из сферы над головой\n• Расширять это сияние за пределы тела — в комнату и Вселенную\n• Задавать себе главный вопрос: «Где сейчас моё истинное “Я”, а где — роль, навязанная миром?»\n\n«Когда вы ощущаете золотое сияние внутри и снаружи, вы перестаёте быть функцией. Вы становитесь человеком, который может включить любую роль, но не застревать в ней.»', btnText: '🎧 К медитации' },
-            { type: 'quiz', questions: [
-                'Какая из трёх сфер (живот, грудь, голова) чувствовалась ярче всего? Что это говорит о вашем текущем состоянии?',
-                'Вспомните ситуацию за последние сутки, где вы сказали «мне надо» вместо «я хочу». Что изменилось бы, если бы вы выбрали «хочу»?',
-                'Закройте глаза и снова ощутите золотое сияние вокруг тела. Есть ли разница с тем, что было до медитации?'
-            ], text: '📝 Три вопроса для осмысления после «Искусства быть»:\n\nЗапишите ответы в заметки — через месяц вы удивитесь, как сильно изменилось восприятие.', btnText: '✍️ Далее' },
-            { type: 'audio_with_text', audio: 'https://files.catbox.moe/rb8rws.mp3', title: '🎙 Аудиоподкаст', text: '«Упражнение “Искусство Быть”, как ластик, стирает старую программу и рисует новую, Вашу собственную.»\n\n«Искусство быть — не в том, чтобы стать кем-то другим. А в том, чтобы перестать притворяться, что вы — не вы.»\n\n«Когда мы размышляем о себе, мы просвечиваем свой кокон. Так случается озарение.»\n\n«Наш кокон — как витражный плафон. Ячейки, которые мы осознаём, становятся прозрачными. Мы начинаем видеть реальность, а не иллюзию впечатлений.»\n\n«Все энергетические практики не решают проблем. Они помогают решать проблемы в состоянии интуитивного понимания.»\n\n«Если человек не размышляет, ячейка остаётся окрашенной страхом или привычкой. Так работают комплексы.»', btnText: '🎧 К аудиоподкасту' },
-            { type: 'next_key_prompt', nextKey: 'key4' }
-        ];
-
-        const KEY4_STEPS = [
-            { type: 'welcome', content: '✅ Оплата прошла успешно!\n\nВы получили доступ к Ключу 4. «Субстрат жизненности» (28 мин) — самой глубокой медитации из книги «Искусство БЫТЬ!».\n\n📦 Что входит в этот ключ:\n• Аудиподкасты (4шт)\n• Текстовые шаги для закрепления\n• Иллюстрации\n• Аудиомедитация\n\n⚠️ Важно: Перед тем как слушать медитацию, обязательно прослушайте подкаст «Действующие лица медитации “Субстрат жизненности”». Без понимания ролей (Переживающий, Смотрящий со стороны, Смотрящий сверху, Отрешённый) практика может вызвать путаницу.\n\nПриступайте.' },
-            { type: 'audio_with_image', audio: 'https://files.catbox.moe/4e21s8.mp3', image: 'https://files.catbox.moe/8x66ie.jpg', title: '🎙 Подкаст: Есть только миг, между прошлым и будущим', text: 'О чём этот подкаст:\n\n• «Есть только миг между прошлым и будущим. Именно он называется Жизнь.» Мы привыкли жить или воспоминаниями, или планами. Но ни то, ни другое не есть жизнь. Жизнь — это то, что происходит прямо сейчас, между тем, чего уже нет, и тем, чего ещё нет.\n• «Что там было положительного? Только одно — мы выжили! Всё!» Из прошлого мы можем взять только энергию выживания — субстрат жизненности. Всё остальное (сценарии, обиды, страхи) — это «маленькие штанишки», в которые мы пытаемся засунуть себя сегодняшних.\n• «Мы из прошлого берём “маленькие штанишки” и себя “большого” в настоящем засовываем в них. Чем меньше “штанишки”, тем скованнее мы себя чувствуем.»\n• «Будущее всё время нас пугает тем, что мы там не были физически. Поэтому человек так цепляется за прошлое. Потому что там он не умер.»\n• «Есть другой путь — жить от импульса, от постоянного присутствия. Тогда при встрече есть просто энергия, которая ищет способ реализации.»\n• «Когда случается экстремальная ситуация, сознание выключается. Вместо него включается механизм выживания. Энергия внутренних органов уходит в мышцы. Вы оказываетесь в закрытой коробочке.»', btnText: '🎧 Следующий подкаст' },
-            { type: 'audio_with_image', audio: 'https://files.catbox.moe/qdlw95.mp3', image: 'https://files.catbox.moe/ligztl.jpg', title: '🎙 Подкаст: Действующие лица медитации “Субстрат жизненности”', text: '30 минут о четырёх ролях, которые вы будете играть в самой глубокой практике из книги «Искусство БЫТЬ!».\n\n⚠️ Важное предупреждение перед прослушиванием:\n\nЭта глава — теоретическая база для медитации «Субстрат жизненности» (Ключ 4). В ней объясняется, кто такие Переживающий, Смотрящий со стороны, Смотрящий на всё целиком сверху и Отрешённый. Без понимания этих ролей вы не сможете правильно выполнить практику.\n\nЕсли вы начнёте большую медитацию, не прослушав предварительно этот подкаст и не разобравшись в действующих лицах, у вас неизбежно возникнут вопросы:\n«От чьего лица я сейчас смотрю?», «Почему я должен видеть себя со стороны?», «Как отличить Смотрящего со стороны от Смотрящего сверху?», «Что значит “быть в Отрешённом”?»\n\nОтветы на них — в этом аудио.\n\n«Всё упражнение “Субстрат Жизненности” — это достаточно большой объём. На его выполнение требуется около часа, поэтому его можно делать этапами.»\n«В первый день сходили в прошлое и сделали только первый виток просмотра. На следующий день — ещё раз в прошлое, но в другую ситуацию.»\n«Затем можно переходить к просмотру будущего. Вначале — фаза проявления, а затем развития.»', btnText: '🎧 Далее' },
-            { type: 'text', content: '📌 Заключительные пояснения\n\nУпражнение «Субстрат Жизненности» нужно делать каждый день в течение месяца (лучше года). Тогда тело привыкает к новому взгляду на жизнь.\nВ начале трудно, потом появляется исследовательское начало — «хочется полазить по дырам своей судьбы».\n\n«Вы не разбираетесь с психологией “я плохо поступил”. Вы просто понимаете: я живой, вокруг меня жизнь, значит, всё в порядке. Я поступил так, как мог. Если бы мог лучше — отказался бы? Нет.»\n\n«Это реальное освобождение, дарующее сильную жизнь!»', btnText: '✨ Приступить к практическим рекомендациям' },
-            { type: 'audio', audio: 'https://files.catbox.moe/t5seju.mp3', title: '🎧 Практические рекомендации', text: 'Теперь вы готовы к большой медитации.\n\nПосле практики возвращайтесь к этим шагам. И помните: вы уже выжили — значит, справитесь и с будущим.', btnText: '🧘 Приступить к медитации' },
-            { type: 'audio', audio: 'https://files.catbox.moe/8fs2kd.mp3', title: '🎧 Медитация «Субстрат жизненности»', text: '', btnText: '✅ Завершить ключ 4' },
-            { type: 'bonus_pdf', pdf: 'https://files.catbox.moe/nrf3ik.pdf', text: '📘 Следующий шаг — понимание себя\n\n«Структура потребностей»\n\nЧто внутри:\n• Три группы потребностей: витальные, социальные, идеальные\n• Как потребности «для себя» и «для других» формируют личность\n• Что такое потребность в вооружённости и воля\n• Почему мы путаем «хочу» и «надо»\n\nБез этой теории вы можете не понять, почему медитация иногда не даёт результата. С ней — будете видеть свои истинные мотивы.', btnText: '📥 Скачать PDF' },
-            { type: 'final_bonus', content: '🎁 Сам бонус — вот он\n\nЯ мог бы дать тебе ещё одну медитацию или подкаст. Но настоящий бонус — это понимание.\nТы уже получил его, прочитав эту главу и дойдя до этого места.\n\nА если хочешь закрепить — вот моё личное предложение:\n\nВозьми один день и проживи его, ни разу не сказав «мне надо». Только «я хочу» и «я выбираю». Посмотри, что изменится.\n\nПопробуй. Это и есть практика «Искусство БЫТЬ!» в чистом виде.\n\nС уважением и верой в твою силу,\nРуденко Михаил\nТочка опоры', btnText: '✔️ Завершить практику' }
-        ];
-
-        const FREE_STEPS = [
-            { type: "welcome" },
-            { type: "audio", id: "setup", title: "🎧 Настройка (3分钟)", desc: "Слушайте перед медитацией.", audioKey: "setup", nextText: "ДАЛЕЕ" },
-            { type: "audio", id: "key1", title: "🔑 КЛЮЧ 1 · 5 врат (10 минут)", desc: "Закройте глаза, дышите свободно.", audioKey: "key1", nextText: "ДАЛЕЕ → интеграция" },
-            { type: "audio", id: "integration", title: "🧩 Интеграция (7 минут)", desc: "Закрепите состояние.", audioKey: "integration", nextText: "ДАЛЕЕ" },
-            { type: "steps" }
-        ];
-
-        function getStepsForKey(keyId) {
-            if(keyId === 'key2') return KEY2_STEPS;
-            if(keyId === 'key3') return KEY3_STEPS;
-            if(keyId === 'key4') return KEY4_STEPS;
-            return [];
+        // ------------------- ЗАГРУЗКА КОНТЕНТА КЛЮЧА ИЗ MONGODB -------------------
+        async function loadKeyContent(keyId) {
+            const webApp = window.Telegram?.WebApp;
+            if (!webApp || !webApp.initData) return null;
+            try {
+                const response = await fetch(`${WORKER_URL}/get-content?initData=${encodeURIComponent(webApp.initData)}&key=${keyId}`);
+                if (response.ok) {
+                    return await response.json();
+                } else {
+                    if (response.status === 403) alert('Доступ запрещён');
+                    return null;
+                }
+            } catch(e) { console.error(e); return null; }
         }
 
-        // ------------------------------------------------------------------
-        // 5. НАВИГАЦИЯ ПО ШАГАМ И ОТРИСОВКА КОНТЕНТА
-        // ------------------------------------------------------------------
-        let currentPath = null;
+        // ------------------- НАВИГАЦИЯ ПО ШАГАМ (ДИНАМИЧЕСКАЯ) -------------------
+        let currentContent = null;   // { key_id, steps }
+        let currentStepIndex = 0;
+        let stepHistory = [];
         let activeAudio = null;
+
         function stopActiveAudio() {
             if (activeAudio) { activeAudio.pause(); activeAudio = null; }
         }
-        function navigateToKey(keyId) {
-            if(!userStatus[keyId]) { alert('Доступ закрыт'); return; }
-            stopActiveAudio();
-            let saved = localStorage.getItem(`key_${keyId}_progress`);
-            if(saved) {
-                let prog = JSON.parse(saved);
-                currentPath = { keyId: keyId, stepIndex: prog.stepIndex, history: prog.history, welcomeShown: prog.welcomeShown };
-            } else {
-                currentPath = { keyId: keyId, stepIndex: 0, history: [], welcomeShown: welcomeShown[keyId] };
-            }
-            renderCurrentStep();
-        }
-        function saveCurrentProgress() {
-            if(currentPath) {
-                localStorage.setItem(`key_${currentPath.keyId}_progress`, JSON.stringify({
-                    stepIndex: currentPath.stepIndex,
-                    history: currentPath.history,
-                    welcomeShown: currentPath.welcomeShown
-                }));
-            }
-        }
-        function resetKeyProgress(keyId) {
-            localStorage.removeItem(`key_${keyId}_progress`);
-            welcomeShown[keyId] = false;
-            localStorage.setItem(`key_${keyId}_welcome_shown`, 'false');
-        }
-        function completeKey(keyId) {
-            if(keyId === 'key2') { completed.key2 = true; saveCompletedLocally(); alert('КЛЮЧ 2 пройден! Теперь доступен КЛЮЧ 3.'); }
-            else if(keyId === 'key3') { completed.key3 = true; saveCompletedLocally(); alert('КЛЮЧ 3 пройден! Теперь доступен КЛЮЧ 4.'); }
-        }
-        function saveCompletedLocally() {
-            localStorage.setItem('completed', JSON.stringify(completed));
-            localStorage.setItem('welcomeShown', JSON.stringify(welcomeShown));
-            updateStatusUI();
-        }
-        function renderCurrentStep() {
-            if(!currentPath) return;
-            const { keyId, stepIndex, history } = currentPath;
-            const steps = getStepsForKey(keyId);
-            if(stepIndex >= steps.length) {
-                completeKey(keyId);
-                resetKeyProgress(keyId);
-                showHome();
-                return;
-            }
-            const step = steps[stepIndex];
-            if(step.type === 'welcome' && currentPath.welcomeShown) {
-                currentPath.stepIndex++;
-                saveCurrentProgress();
-                renderCurrentStep();
-                return;
-            }
-            if(step.type === 'welcome') {
-                currentPath.welcomeShown = true;
-                localStorage.setItem(`key_${keyId}_welcome_shown`, 'true');
-            }
-            renderStepContent(step, keyId);
-        }
-        function nextStep() {
-            if(!currentPath) return;
-            stopActiveAudio();
-            currentPath.history.push(currentPath.stepIndex);
-            currentPath.stepIndex++;
-            saveCurrentProgress();
-            renderCurrentStep();
-        }
-        function prevStep() {
-            if(!currentPath) return;
-            stopActiveAudio();
-            if(currentPath.history.length > 0) {
-                currentPath.stepIndex = currentPath.history.pop();
-                saveCurrentProgress();
-                renderCurrentStep();
-            } else if(currentPath.stepIndex > 0) {
-                currentPath.stepIndex--;
-                saveCurrentProgress();
-                renderCurrentStep();
-            } else {
-                showHome();
-            }
-        }
-        function goHome() { stopActiveAudio(); showHome(); }
 
-        // Отрисовка шага
-        function renderStepContent(step, keyId) {
+        function renderStep(step) {
             const panel = document.getElementById('dynamicPanel');
             let html = '<div class="meditation-card">';
-            if(step.type === 'welcome' || step.type === 'text') {
+            if (step.type === 'welcome' || step.type === 'text') {
                 html += `<div class="med-title">📘 Информация</div><div class="med-sub">${(step.content || step.text || '').replace(/\n/g,'<br>')}</div>`;
                 html += `<button id="stepNextBtn" class="btn-audio">Далее</button>`;
             }
-            else if(step.type === 'audio' || step.type === 'audio_with_text' || step.type === 'audio_with_image') {
+            else if (step.type === 'audio' || step.type === 'audio_with_text' || step.type === 'audio_with_image') {
                 const title = step.title || '🎧 Аудио';
                 const text = step.text || '';
                 html += `<div class="med-title">${title}</div><div class="med-sub">${text.replace(/\n/g,'<br>')}</div>`;
-                if(step.type === 'audio_with_image') { html += `<div class="image-container"><img src="${step.image}" alt="иллюстрация"></div>`; }
+                if (step.type === 'audio_with_image') { html += `<div class="image-container"><img src="${step.image}" alt="illustration"></div>`; }
                 html += `<div id="playerContainer"></div>`;
                 html += `<button id="stepNextBtn" class="btn-audio">${step.btnText || 'Далее'}</button>`;
             }
-            else if(step.type === 'images_with_text') {
+            else if (step.type === 'images_with_text') {
                 html += `<div class="med-title">🖼️ Картинки</div><div class="med-sub">${step.text.replace(/\n/g,'<br>')}</div>`;
                 html += `<button id="showImagesBtn" class="btn-audio btn-secondary">${step.btnText || 'Показать картинки'}</button>`;
                 html += `<div id="hiddenImages" style="display:none;">`;
@@ -382,15 +233,15 @@
                 html += `</div>`;
                 html += `<button id="stepNextBtn" class="btn-audio" style="margin-top:20px;">Далее →</button>`;
             }
-            else if(step.type === 'quiz') {
+            else if (step.type === 'quiz') {
                 html += `<div class="med-title">📝 Осмысление</div><div class="med-sub">${step.text.replace(/\n/g,'<br>')}</div>`;
                 step.questions.forEach((q, i) => { html += `<div class="quiz-question">${i+1}. ${q}</div>`; });
                 html += `<button id="stepNextBtn" class="btn-audio">${step.btnText || 'Далее'}</button>`;
             }
-            else if(step.type === 'next_key_prompt') {
+            else if (step.type === 'next_key_prompt') {
                 const nextKey = step.nextKey;
                 const nextPurchased = userStatus[nextKey];
-                if(nextPurchased) {
+                if (nextPurchased) {
                     html += `<div class="med-title">🔓 Переход к следующему ключу</div><div class="med-sub">Вы прошли этот ключ! Теперь доступен следующий.</div>`;
                     html += `<button id="nextKeyBtn" class="btn-audio">Перейти к ${nextKey === 'key3' ? 'КЛЮЧУ 3' : 'КЛЮЧУ 4'}</button>`;
                 } else {
@@ -401,27 +252,33 @@
                 }
                 html += `<button id="homeAfterKeyBtn" class="back-home">← На главную</button>`;
             }
-            else if(step.type === 'bonus_pdf') {
+            else if (step.type === 'bonus_pdf') {
                 html += `<div class="med-title">📘 Бонусный материал</div><div class="med-sub">${step.text.replace(/\n/g,'<br>')}</div>`;
                 html += `<a href="${step.pdf}" target="_blank" class="btn-audio" style="display:inline-block; text-align:center;">${step.btnText}</a><br>`;
                 html += `<button id="stepNextBtn" class="btn-audio" style="margin-top:20px;">Далее</button>`;
             }
-            else if(step.type === 'final_bonus') {
+            else if (step.type === 'final_bonus') {
                 html += `<div class="med-title">🎁 Завершение</div><div class="med-sub">${step.content.replace(/\n/g,'<br>')}</div>`;
                 html += `<button id="stepNextBtn" class="btn-audio">${step.btnText || 'Завершить'}</button>`;
             }
-            html += `<button id="stepBackBtn" class="back-home">← Назад</button><button id="stepHomeBtn" class="back-home">🏠 На главную</button>`;
+            // Добавляем три кнопки: Назад, В начало, На главную
+            html += `<div style="display: flex; justify-content: space-between; margin-top: 20px;">`;
+            html += `<button id="stepBackBtn" class="back-home">← Назад</button>`;
+            html += `<button id="stepStartBtn" class="back-to-start">🏁 В начало</button>`;
+            html += `<button id="stepHomeBtn" class="back-home">🏠 На главную</button>`;
+            html += `</div>`;
             html += `</div>`;
             panel.innerHTML = html;
             document.getElementById('homeScreen').classList.add('hidden');
             panel.classList.remove('hidden');
 
-            if(step.type === 'images_with_text') {
+            // Обработчик показа картинок
+            if (step.type === 'images_with_text') {
                 const showBtn = document.getElementById('showImagesBtn');
                 const hiddenDiv = document.getElementById('hiddenImages');
-                if(showBtn && hiddenDiv) {
+                if (showBtn && hiddenDiv) {
                     showBtn.addEventListener('click', () => {
-                        if(hiddenDiv.style.display === 'none') {
+                        if (hiddenDiv.style.display === 'none') {
                             hiddenDiv.style.display = 'block';
                             showBtn.textContent = 'Скрыть картинки';
                         } else {
@@ -432,9 +289,10 @@
                 }
             }
 
-            if(step.type === 'audio' || step.type === 'audio_with_text' || step.type === 'audio_with_image') {
+            // Аудиоплеер
+            if (step.type === 'audio' || step.type === 'audio_with_text' || step.type === 'audio_with_image') {
                 const container = document.getElementById('playerContainer');
-                if(container) {
+                if (container) {
                     const audioUrl = step.audio;
                     const audio = new Audio(audioUrl);
                     audio.preload = 'metadata';
@@ -458,26 +316,26 @@
                     const speedSelect = playerDiv.querySelector('.speed-select');
                     let isPlaying = false;
                     function formatTime(sec) {
-                        if(isNaN(sec)) return "0:00";
+                        if (isNaN(sec)) return "0:00";
                         const mins = Math.floor(sec/60);
                         const secs = Math.floor(sec%60);
                         return `${mins}:${secs<10?'0'+secs:secs}`;
                     }
                     audio.addEventListener('loadedmetadata', () => {
-                        if(isFinite(audio.duration)) {
+                        if (isFinite(audio.duration)) {
                             seekBar.max = audio.duration;
                             timeSpan.innerText = `0:00 / ${formatTime(audio.duration)}`;
                         }
                     });
                     audio.addEventListener('timeupdate', () => {
-                        if(!isNaN(audio.duration)) {
+                        if (!isNaN(audio.duration)) {
                             seekBar.value = audio.currentTime;
                             timeSpan.innerText = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
                         }
                     });
                     audio.addEventListener('ended', () => { playBtn.innerText='▶'; isPlaying=false; });
                     playBtn.addEventListener('click', () => {
-                        if(isPlaying) {
+                        if (isPlaying) {
                             audio.pause(); playBtn.innerText='▶'; isPlaying=false;
                         } else {
                             audio.play().catch(console.log); playBtn.innerText='⏸'; isPlaying=true;
@@ -489,25 +347,113 @@
                 }
             }
 
+            // Обработчики кнопок
             document.getElementById('stepNextBtn')?.addEventListener('click', () => nextStep());
             document.getElementById('stepBackBtn')?.addEventListener('click', () => prevStep());
+            document.getElementById('stepStartBtn')?.addEventListener('click', () => jumpToStart());
             document.getElementById('stepHomeBtn')?.addEventListener('click', () => goHome());
-            if(step.type === 'next_key_prompt') {
+            if (step.type === 'next_key_prompt') {
                 const nextKey = step.nextKey;
                 const nextPurchased = userStatus[nextKey];
-                if(nextPurchased) {
-                    document.getElementById('nextKeyBtn')?.addEventListener('click', () => { navigateToKey(nextKey); });
+                if (nextPurchased) {
+                    document.getElementById('nextKeyBtn')?.addEventListener('click', () => openKeyContent(nextKey));
                 } else {
                     const link = nextKey === 'key3' ? TRIBUTE_LINKS.key3 : TRIBUTE_LINKS.key4;
-                    document.getElementById('buyNextKeyBtn')?.addEventListener('click', () => { openTributePayment(link, nextKey); });
+                    document.getElementById('buyNextKeyBtn')?.addEventListener('click', () => openTributePayment(link, nextKey));
                 }
                 document.getElementById('homeAfterKeyBtn')?.addEventListener('click', () => goHome());
             }
         }
 
-        // ------------------------------------------------------------------
-        // 7. БЕСПЛАТНАЯ ВОРОНКА КЛЮЧА 1
-        // ------------------------------------------------------------------
+        async function openKeyContent(keyId) {
+            if (!userStatus[keyId]) {
+                alert('Доступ закрыт');
+                return;
+            }
+            const content = await loadKeyContent(keyId);
+            if (!content || !content.steps) return;
+            currentContent = content;
+            currentStepIndex = 0;
+            stepHistory = [];
+            // Если первый шаг – приветствие и оно уже показывалось, пропускаем
+            if (content.steps[0] && content.steps[0].type === 'welcome' && welcomeShown[keyId]) {
+                currentStepIndex++;
+            }
+            renderCurrentStep();
+        }
+
+        function renderCurrentStep() {
+            if (!currentContent || currentStepIndex >= currentContent.steps.length) {
+                // Ключ пройден – отмечаем completion для следующего ключа
+                if (currentContent && currentContent.key_id === 'key2') {
+                    completed.key2 = true;
+                    localStorage.setItem('completed', JSON.stringify(completed));
+                } else if (currentContent && currentContent.key_id === 'key3') {
+                    completed.key3 = true;
+                    localStorage.setItem('completed', JSON.stringify(completed));
+                }
+                localStorage.removeItem(`key_${currentContent.key_id}_progress`);
+                goHome();
+                return;
+            }
+            const step = currentContent.steps[currentStepIndex];
+            renderStep(step);
+        }
+
+        function nextStep() {
+            if (!currentContent) return;
+            stopActiveAudio();
+            stepHistory.push(currentStepIndex);
+            currentStepIndex++;
+            // Сохраняем прогресс
+            localStorage.setItem(`key_${currentContent.key_id}_progress`, JSON.stringify({
+                stepIndex: currentStepIndex,
+                history: stepHistory,
+                welcomeShown: true
+            }));
+            renderCurrentStep();
+        }
+
+        function prevStep() {
+            if (!currentContent) return;
+            stopActiveAudio();
+            if (stepHistory.length > 0) {
+                currentStepIndex = stepHistory.pop();
+                renderCurrentStep();
+            } else if (currentStepIndex > 0) {
+                currentStepIndex--;
+                renderCurrentStep();
+            } else {
+                goHome();
+            }
+        }
+
+        function jumpToStart() {
+            if (!currentContent) return;
+            stopActiveAudio();
+            currentStepIndex = 0;
+            stepHistory = [];
+            renderCurrentStep();
+        }
+
+        function goHome() {
+            stopActiveAudio();
+            document.getElementById('dynamicPanel').classList.add('hidden');
+            document.getElementById('homeScreen').classList.remove('hidden');
+            currentContent = null;
+            currentStepIndex = 0;
+            stepHistory = [];
+            loadUserStatus();
+        }
+
+        // ------------------- БЕСПЛАТНАЯ ВОРОНКА КЛЮЧА 1 (без изменений) -------------------
+        const FREE_STEPS = [
+            { type: "welcome" },
+            { type: "audio", id: "setup", title: "🎧 Настройка (3 минуты)", desc: "Слушайте перед медитацией.", audioKey: "setup", nextText: "ДАЛЕЕ" },
+            { type: "audio", id: "key1", title: "🔑 КЛЮЧ 1 · 5 врат (10 минут)", desc: "Закройте глаза, дышите свободно.", audioKey: "key1", nextText: "ДАЛЕЕ → интеграция" },
+            { type: "audio", id: "integration", title: "🧩 Интеграция (7 минут)", desc: "Закрепите состояние.", audioKey: "integration", nextText: "ДАЛЕЕ" },
+            { type: "steps" }
+        ];
         let currentStep1 = 0, stepHistory1 = [], currentAudio1 = null, isPlaying1 = false;
         const homeDiv = document.getElementById('homeScreen');
         const dynamicDiv = document.getElementById('dynamicPanel');
@@ -607,33 +553,28 @@
             homeDiv.classList.remove('hidden');
             dynamicDiv.innerHTML = '';
             isPlaying1 = false;
-            loadUserStatus(); // При каждом показе главного экрана загружаем свежий статус с сервера
+            loadUserStatus();
         }
 
-        // ------------------------------------------------------------------
-        // 8. ОБРАБОТЧИКИ КНОПОК НА ГЛАВНОЙ (БЕЗОПАСНЫЕ)
-        // ------------------------------------------------------------------
-   async function onKeyClick(keyId) {
-    if (keyId === 'key1') {
-        currentStep1 = 0; stepHistory1 = []; renderStep1();
-        return;
-    }
-    // Просто проверяем userStatus, который уже загружен с сервера
-    if (userStatus[keyId]) {
-        if (keyId === 'key2') navigateToKey('key2');
-        else if (keyId === 'key3') navigateToKey('key3');
-        else if (keyId === 'key4') navigateToKey('key4');
-        return;
-    }
-    // Если ключ не куплен
-    if (keyId === 'key4') {
-        if (confirm('КЛЮЧ 4 платный. Открыть оплату через Tribute?')) {
-            openTributePayment(TRIBUTE_LINKS.key4, 'key4');
+        // ------------------- ОБРАБОТЧИКИ КЛЮЧЕЙ -------------------
+        async function onKeyClick(keyId) {
+            if (keyId === 'key1') {
+                currentStep1 = 0; stepHistory1 = []; renderStep1();
+                return;
+            }
+            if (userStatus[keyId]) {
+                await openKeyContent(keyId);
+                return;
+            }
+            if (keyId === 'key4') {
+                if (confirm('КЛЮЧ 4 платный. Открыть оплату через Tribute?')) {
+                    openTributePayment(TRIBUTE_LINKS.key4, 'key4');
+                }
+            } else {
+                alert('Доступ закрыт. Оплатите ключ через Tribute.');
+            }
         }
-    } else {
-        alert('Доступ закрыт. Оплатите ключ через Tribute.');
-    }
-}
+
         document.querySelectorAll('.key-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 const keyId = card.dataset.key;
@@ -643,9 +584,8 @@
         document.getElementById('buyAllBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.all, 'all'));
         document.getElementById('donateBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.donate, null));
 
-        // Запуск приложения
         showHome();
-        if(window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
+        if (window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
     </script>
 </body>
 </html>
