@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Стили остаются без изменений – скопированы из вашего текущего файла */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #FEF9EF; font-family: 'Inter', sans-serif; color: #2C2B28; min-height: 100vh; padding: 24px 20px 60px; position: relative; overflow-x: hidden; }
         .mandala-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.35; }
@@ -28,7 +27,6 @@
         .status-locked { color: #B29A64; }
         .btn-donate { background: transparent; border: 1px solid #C6A43B; color: #C6A43B; font-weight: 600; padding: 10px 20px; border-radius: 60px; font-size: 14px; cursor: pointer; width: 100%; margin: 30px 0 10px; transition: 0.2s; }
         .btn-donate:hover { background: rgba(198,164,59,0.1); }
-
         .meditation-card { background: rgba(255, 251, 240, 0.96); backdrop-filter: blur(4px); border-radius: 48px; padding: 24px; margin: 16px 0; border: 1px solid #F2E5CD; box-shadow: 0 8px 30px rgba(0,0,0,0.05); animation: fadeScale 0.25s ease; }
         @keyframes fadeScale { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
         .med-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 600; color: #C6A43B; margin-bottom: 8px; }
@@ -75,7 +73,9 @@
         <div id="dynamicPanel" class="hidden"></div>
     </div>
     <script>
-        // ------------------- МАНДАЛА (без изменений) -------------------
+        // ------------------------------------------------------------------
+        // 1. МАНДАЛА (без изменений)
+        // ------------------------------------------------------------------
         const canvas = document.getElementById('mandalaCanvas');
         let ctx = canvas.getContext('2d');
         let angle = 0;
@@ -104,7 +104,7 @@
         window.addEventListener('resize',()=>resizeCanvas());
         startMandala();
 
-        // ------------------- КОНФИГУРАЦИЯ -------------------
+        // ------------------- 2. КОНФИГУРАЦИЯ -------------------
         const WORKER_URL = 'https://checker.mirhaet83.workers.dev';
         const TRIBUTE_LINKS = {
             key2: 'https://t.me/tribute/app?startapp=pub9',
@@ -157,7 +157,7 @@
             }
         }
 
-        // ------------------- ОПЛАТА И LONG POLLING -------------------
+        // ------------------- ОПЛАТА -------------------
         function openTributePayment(link, keyId) {
             const paymentId = Date.now().toString();
             localStorage.setItem('pending_payment_id', paymentId);
@@ -185,7 +185,7 @@
             setTimeout(() => { if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; } }, 600000);
         }
 
-        // ------------------- ЗАГРУЗКА КОНТЕНТА КЛЮЧА ИЗ MONGODB -------------------
+        // ------------------- ЗАГРУЗКА КОНТЕНТА ИЗ MONGODB -------------------
         async function loadKeyContent(keyId) {
             const webApp = window.Telegram?.WebApp;
             if (!webApp || !webApp.initData) return null;
@@ -200,8 +200,8 @@
             } catch(e) { console.error(e); return null; }
         }
 
-        // ------------------- НАВИГАЦИЯ ПО ШАГАМ (ДИНАМИЧЕСКАЯ) -------------------
-        let currentContent = null;   // { key_id, steps }
+        // ------------------- НАВИГАЦИЯ ПО ШАГАМ -------------------
+        let currentContent = null;
         let currentStepIndex = 0;
         let stepHistory = [];
         let activeAudio = null;
@@ -261,7 +261,6 @@
                 html += `<div class="med-title">🎁 Завершение</div><div class="med-sub">${step.content.replace(/\n/g,'<br>')}</div>`;
                 html += `<button id="stepNextBtn" class="btn-audio">${step.btnText || 'Завершить'}</button>`;
             }
-            // Добавляем три кнопки: Назад, В начало, На главную
             html += `<div style="display: flex; justify-content: space-between; margin-top: 20px;">`;
             html += `<button id="stepBackBtn" class="back-home">← Назад</button>`;
             html += `<button id="stepStartBtn" class="back-to-start">🏁 В начало</button>`;
@@ -272,7 +271,6 @@
             document.getElementById('homeScreen').classList.add('hidden');
             panel.classList.remove('hidden');
 
-            // Обработчик показа картинок
             if (step.type === 'images_with_text') {
                 const showBtn = document.getElementById('showImagesBtn');
                 const hiddenDiv = document.getElementById('hiddenImages');
@@ -289,7 +287,6 @@
                 }
             }
 
-            // Аудиоплеер
             if (step.type === 'audio' || step.type === 'audio_with_text' || step.type === 'audio_with_image') {
                 const container = document.getElementById('playerContainer');
                 if (container) {
@@ -347,7 +344,6 @@
                 }
             }
 
-            // Обработчики кнопок
             document.getElementById('stepNextBtn')?.addEventListener('click', () => nextStep());
             document.getElementById('stepBackBtn')?.addEventListener('click', () => prevStep());
             document.getElementById('stepStartBtn')?.addEventListener('click', () => jumpToStart());
@@ -375,7 +371,6 @@
             currentContent = content;
             currentStepIndex = 0;
             stepHistory = [];
-            // Если первый шаг – приветствие и оно уже показывалось, пропускаем
             if (content.steps[0] && content.steps[0].type === 'welcome' && welcomeShown[keyId]) {
                 currentStepIndex++;
             }
@@ -384,7 +379,6 @@
 
         function renderCurrentStep() {
             if (!currentContent || currentStepIndex >= currentContent.steps.length) {
-                // Ключ пройден – отмечаем completion для следующего ключа
                 if (currentContent && currentContent.key_id === 'key2') {
                     completed.key2 = true;
                     localStorage.setItem('completed', JSON.stringify(completed));
@@ -405,7 +399,6 @@
             stopActiveAudio();
             stepHistory.push(currentStepIndex);
             currentStepIndex++;
-            // Сохраняем прогресс
             localStorage.setItem(`key_${currentContent.key_id}_progress`, JSON.stringify({
                 stepIndex: currentStepIndex,
                 history: stepHistory,
@@ -446,7 +439,7 @@
             loadUserStatus();
         }
 
-        // ------------------- БЕСПЛАТНАЯ ВОРОНКА КЛЮЧА 1 (без изменений) -------------------
+        // ------------------- БЕСПЛАТНАЯ ВОРОНКА КЛЮЧА 1 -------------------
         const FREE_STEPS = [
             { type: "welcome" },
             { type: "audio", id: "setup", title: "🎧 Настройка (3 минуты)", desc: "Слушайте перед медитацией.", audioKey: "setup", nextText: "ДАЛЕЕ" },
