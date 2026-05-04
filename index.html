@@ -50,6 +50,10 @@
         .image-container { margin: 20px 0; text-align: center; }
         .image-container img { max-width: 100%; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin: 10px 0; }
         .quiz-question { margin: 20px 0; font-style: italic; background: rgba(255,245,225,0.6); padding: 16px; border-radius: 24px; }
+        .error-message { background: #FEE2E2; color: #B91C1C; padding: 12px; border-radius: 28px; margin: 12px 0; font-size: 13px; text-align: center; }
+        .refresh-btn { background: transparent; border: 1px solid #C6A43B; color: #C6A43B; padding: 6px 12px; border-radius: 40px; font-size: 12px; cursor: pointer; margin-left: 8px; }
+        .loading-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #EADCA8; border-top-color: #C6A43B; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -74,7 +78,7 @@
     </div>
     <script>
         // ------------------------------------------------------------------
-        // 1. МАНДАЛА
+        // 1. МАНДАЛА (анимация)
         // ------------------------------------------------------------------
         const canvas = document.getElementById('mandalaCanvas');
         let ctx = canvas.getContext('2d');
@@ -120,30 +124,61 @@
             bonus: "https://files.catbox.moe/mhz6kz.mp3"
         };
 
+        // Достоверный статус с сервера
         let userStatus = { key2: false, key3: false, key4: false };
         let completed = { key2: false, key3: false };
         let welcomeShown = { key2: false, key3: false, key4: false };
+        let isRefreshingStatus = false;
 
-        async function loadUserStatus() {
+        // ------------------------------------------------------------------
+        // 3. СЕРВЕРНЫЕ ЗАПРОСЫ С ОБРАБОТКОЙ ОШИБОК И ПРИНУДИТЕЛЬНОЙ СИНХРОНИЗАЦИЕЙ
+        // ------------------------------------------------------------------
+        async function loadUserStatus(showLoader = false) {
             const webApp = window.Telegram?.WebApp;
-            if (!webApp || !webApp.initData) return;
+            if (!webApp || !webApp.initData) {
+                console.warn("Telegram WebApp не инициализирован");
+                return;
+            }
+            if (isRefreshingStatus) return;
+            isRefreshingStatus = true;
             try {
                 const resp = await fetch(`${WORKER_URL}/user-status?initData=${encodeURIComponent(webApp.initData)}`);
                 if (resp.ok) {
-                    userStatus = await resp.json();
-                    // Загружаем локальный прогресс (незащищённая часть)
+                    const freshStatus = await resp.json();
+                    // Обновляем только то, что пришло от сервера (строгая проверка)
+                    userStatus = {
+                        key2: !!freshStatus.key2,
+                        key3: !!freshStatus.key3,
+                        key4: !!freshStatus.key4
+                    };
+                    // Локальный прогресс (незащищённая часть: завершённые ключи, приветствия)
                     const savedCompleted = localStorage.getItem('completed');
                     if (savedCompleted) completed = JSON.parse(savedCompleted);
                     const savedWelcome = localStorage.getItem('welcomeShown');
                     if (savedWelcome) welcomeShown = JSON.parse(savedWelcome);
                     updateStatusUI();
+                } else {
+                    console.error("Ошибка загрузки статуса:", resp.status);
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error("loadUserStatus error", e); }
+            finally { isRefreshingStatus = false; }
+        }
+
+        // Принудительное обновление статуса и UI (после оплаты или ошибки)
+        async function refreshUserStatusAndUI() {
+            await loadUserStatus(true);
+            // Если текущий открытый ключ вдруг стал недоступен, закрываем панель
+            if (currentContent && currentContent.key_id && !userStatus[currentContent.key_id]) {
+                showErrorAndGoHome("Доступ к этому ключу был отозван или не оплачен. Пожалуйста, проверьте статус.");
+            }
         }
 
         function updateStatusUI() {
             const e2 = document.getElementById('key2Status');
-            if(e2) { e2.innerHTML = userStatus.key2 ? '✓ открыт доступ' : '🔒 закрыт доступ'; e2.className = userStatus.key2 ? 'status-badge status-open' : 'status-badge status-closed'; }
+            if(e2) { 
+                e2.innerHTML = userStatus.key2 ? '✓ открыт доступ' : '🔒 закрыт доступ'; 
+                e2.className = userStatus.key2 ? 'status-badge status-open' : 'status-badge status-closed'; 
+            }
             const e3 = document.getElementById('key3Status');
             if(e3) {
                 if (!userStatus.key3) e3.innerHTML = '🔒 закрыт доступ';
@@ -160,43 +195,56 @@
             }
         }
 
-        // ------------------- ОПЛАТА (без long polling) -------------------
+        // Оплата через Tribute с последующим принудительным обновлением статуса
         function openTributePayment(link, keyId) {
             if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.openLink(link);
             } else {
                 window.open(link, '_blank');
             }
-            // После возврата в приложение — обновим статус (при фокусе)
+            // После возврата в приложение через 2 секунды начнём проверять статус (если окно снова активно)
+            setTimeout(() => {
+                refreshUserStatusAndUI();
+            }, 2000);
         }
 
-        // При возврате в приложение перезапрашиваем статус
-        window.addEventListener('focus', () => {
-            loadUserStatus();
-        });
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) loadUserStatus();
-        });
-
-        // ------------------- ЗАГРУЗКА КОНТЕНТА ИЗ MONGODB -------------------
+        // Загрузка контента ключа с сервера с проверкой 403
         async function loadKeyContent(keyId) {
             const webApp = window.Telegram?.WebApp;
             if (!webApp || !webApp.initData) return null;
             try {
                 const response = await fetch(`${WORKER_URL}/get-content?initData=${encodeURIComponent(webApp.initData)}&key=${keyId}`);
+                if (response.status === 403) {
+                    // Сервер явно говорит, что доступ запрещён — принудительно обновляем статус и сбрасываем локальный флаг
+                    await refreshUserStatusAndUI();
+                    throw new Error("ACCESS_DENIED");
+                }
                 if (response.ok) {
                     return await response.json();
-                } else if (response.status === 403) {
-                    alert('Доступ запрещён');
-                    return null;
                 } else {
                     console.error('Load content error', response.status);
                     return null;
                 }
-            } catch(e) { console.error(e); return null; }
+            } catch(e) {
+                if (e.message === "ACCESS_DENIED") throw e;
+                console.error(e);
+                return null;
+            }
         }
 
-        // ------------------- НАВИГАЦИЯ ПО ШАГАМ -------------------
+        // Показать ошибку и вернуться на главную
+        function showErrorAndGoHome(errorMsg) {
+            stopActiveAudio();
+            const panel = document.getElementById('dynamicPanel');
+            panel.innerHTML = `<div class="meditation-card error-message">⚠️ ${errorMsg}<br><button id="errorHomeBtn" class="btn-audio" style="margin-top:12px;">Вернуться на главную</button></div>`;
+            panel.classList.remove('hidden');
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('errorHomeBtn')?.addEventListener('click', () => {
+                goHome();
+            });
+        }
+
+        // ------------------- НАВИГАЦИЯ ПО ШАГАМ (ПЛАТНЫЕ КЛЮЧИ) -------------------
         let currentContent = null;
         let currentStepIndex = 0;
         let stepHistory = [];
@@ -358,41 +406,50 @@
         }
 
         async function openKeyContent(keyId) {
+            // Сначала проверяем серверный статус, если нет — показываем ошибку
             if (!userStatus[keyId]) {
-                alert('Доступ закрыт');
+                showErrorAndGoHome(`Доступ к ${keyId === 'key2' ? 'КЛЮЧУ 2' : keyId === 'key3' ? 'КЛЮЧУ 3' : 'КЛЮЧУ 4'} не оплачен. Приобретите ключ, чтобы начать практику.`);
                 return;
             }
-            const content = await loadKeyContent(keyId);
-            if (!content || !content.steps) {
-                alert('Не удалось загрузить контент');
-                return;
-            }
-            currentContent = content;
-            // Восстанавливаем прогресс
-            const savedProgress = localStorage.getItem(`key_${keyId}_progress`);
-            if (savedProgress) {
-                try {
-                    const progress = JSON.parse(savedProgress);
-                    currentStepIndex = progress.stepIndex || 0;
-                    stepHistory = progress.history || [];
-                } catch {
+            // Показываем лоадер
+            const panel = document.getElementById('dynamicPanel');
+            panel.innerHTML = `<div class="meditation-card"><div class="loading-spinner"></div> Загрузка контента...</div>`;
+            panel.classList.remove('hidden');
+            document.getElementById('homeScreen').classList.add('hidden');
+
+            try {
+                const content = await loadKeyContent(keyId);
+                if (!content || !content.steps) {
+                    throw new Error("EMPTY_CONTENT");
+                }
+                currentContent = content;
+                // Восстанавливаем прогресс
+                const savedProgress = localStorage.getItem(`key_${keyId}_progress`);
+                if (savedProgress) {
+                    try {
+                        const progress = JSON.parse(savedProgress);
+                        currentStepIndex = progress.stepIndex || 0;
+                        stepHistory = progress.history || [];
+                    } catch {
+                        currentStepIndex = 0;
+                        stepHistory = [];
+                    }
+                } else {
                     currentStepIndex = 0;
                     stepHistory = [];
                 }
-            } else {
-                currentStepIndex = 0;
-                stepHistory = [];
+                if (content.steps[0] && content.steps[0].type === 'welcome' && welcomeShown[keyId] && currentStepIndex === 0) {
+                    currentStepIndex = 1;
+                }
+                renderCurrentStep();
+            } catch (err) {
+                console.error(err);
+                showErrorAndGoHome("Не удалось загрузить контент. Возможно, доступ не подтверждён. Попробуйте обновить страницу или обратитесь в поддержку.");
+                // Дополнительно сбросим статус для этого ключа, чтобы UI отобразил закрытый доступ
+                if (keyId !== 'key1') {
+                    await refreshUserStatusAndUI();
+                }
             }
-            // Пропускаем welcome, если уже показывали
-            if (
-                content.steps[0] &&
-                content.steps[0].type === 'welcome' &&
-                welcomeShown[keyId] &&
-                currentStepIndex === 0
-            ) {
-                currentStepIndex = 1;
-            }
-            renderCurrentStep();
         }
 
         function renderCurrentStep() {
@@ -415,12 +472,7 @@
         function nextStep() {
             if (!currentContent) return;
             stopActiveAudio();
-            // Сохраняем welcomeShown при прохождении первого шага welcome
-            if (
-                currentStepIndex === 0 &&
-                currentContent.steps[0] &&
-                currentContent.steps[0].type === 'welcome'
-            ) {
+            if (currentStepIndex === 0 && currentContent.steps[0] && currentContent.steps[0].type === 'welcome') {
                 welcomeShown[currentContent.key_id] = true;
                 localStorage.setItem('welcomeShown', JSON.stringify(welcomeShown));
             }
@@ -462,7 +514,7 @@
             currentContent = null;
             currentStepIndex = 0;
             stepHistory = [];
-            loadUserStatus();
+            refreshUserStatusAndUI(); // синхронизируем статус при возврате
         }
 
         // ------------------- БЕСПЛАТНАЯ ВОРОНКА КЛЮЧА 1 -------------------
@@ -473,9 +525,7 @@
             { type: "audio", id: "integration", title: "🧩 Интеграция (7 минут)", desc: "Закрепите состояние.", audioKey: "integration", nextText: "ДАЛЕЕ" },
             { type: "steps" }
         ];
-        let currentStep1 = 0, stepHistory1 = [], currentAudio1 = null, isPlaying1 = false;
-        const homeDiv = document.getElementById('homeScreen');
-        const dynamicDiv = document.getElementById('dynamicPanel');
+        let currentStep1 = 0, stepHistory1 = [], currentAudio1 = null;
         function formatTime1(sec) { if(isNaN(sec)) return "0:00"; const mins = Math.floor(sec/60); const seconds = Math.floor(sec%60); return `${mins}:${seconds<10?'0'+seconds:seconds}`; }
         function initCustomPlayer(url, container, onEnded, nextBtn) {
             const audio = new Audio(url);
@@ -528,28 +578,28 @@
             const step = FREE_STEPS[currentStep1];
             if(!step) { renderOffer1(); return; }
             if(step.type === 'welcome') {
-                dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">👋 Здравствуйте. Меня зовут Михаил</div><div class="med-sub">Что получите:<br>🎧 3 мин — настройка<br>🎧 10 мин — Ключ №1<br>🎧 7 мин — интеграция<br>🎁 бонус-подкаст<br>📝 3 шага к почти волшебству</div><button id="welcomeBtn" class="btn-audio">ДА</button><button id="homeBtn" class="back-home">← на главную</button></div>`;
+                document.getElementById('dynamicPanel').innerHTML = `<div class="meditation-card"><div class="med-title">👋 Здравствуйте. Меня зовут Михаил</div><div class="med-sub">Что получите:<br>🎧 3 мин — настройка<br>🎧 10 мин — Ключ №1<br>🎧 7 мин — интеграция<br>🎁 бонус-подкаст<br>📝 3 шага к почти волшебству</div><button id="welcomeBtn" class="btn-audio">ДА</button><button id="homeBtn" class="back-home">← на главную</button></div>`;
                 document.getElementById('welcomeBtn')?.addEventListener('click', () => { stepHistory1.push(currentStep1); currentStep1++; renderStep1(); });
                 document.getElementById('homeBtn')?.addEventListener('click', showHome);
-                homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden'); return;
+                document.getElementById('homeScreen').classList.add('hidden'); document.getElementById('dynamicPanel').classList.remove('hidden'); return;
             }
             if(step.type === 'audio') {
-                dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">${step.title}</div><div class="med-sub">${step.desc}</div><div id="playerContainer1"></div><button id="nextBtn1" class="btn-audio">${step.nextText}</button><div><button id="backBtn1" class="back-home">← Назад</button><button id="homeAudioBtn1" class="back-home">На главную</button></div></div>`;
+                document.getElementById('dynamicPanel').innerHTML = `<div class="meditation-card"><div class="med-title">${step.title}</div><div class="med-sub">${step.desc}</div><div id="playerContainer1"></div><button id="nextBtn1" class="btn-audio">${step.nextText}</button><div><button id="backBtn1" class="back-home">← Назад</button><button id="homeAudioBtn1" class="back-home">На главную</button></div></div>`;
                 const playerContainer = document.getElementById('playerContainer1');
                 const nextButton = document.getElementById('nextBtn1');
                 initCustomPlayer(AUDIO_URLS[step.audioKey], playerContainer, () => {}, nextButton);
                 document.getElementById('nextBtn1').addEventListener('click', () => { if(!nextButton.disabled) { stepHistory1.push(currentStep1); currentStep1++; renderStep1(); } });
                 document.getElementById('backBtn1').addEventListener('click', () => { if(stepHistory1.length) currentStep1 = stepHistory1.pop(); else if(currentStep1>0) currentStep1--; renderStep1(); });
                 document.getElementById('homeAudioBtn1').addEventListener('click', showHome);
-                homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden'); return;
+                document.getElementById('homeScreen').classList.add('hidden'); document.getElementById('dynamicPanel').classList.remove('hidden'); return;
             }
             if(step.type === 'steps') {
-                dynamicDiv.innerHTML = `<div class="meditation-card"><div class="med-title">📝 Три шага к почти волшебству</div><div class="med-sub">1. Запишите ощущение после практики.<br>2. Спросите: «Что могу сделать, чтобы продлить состояние?»<br>3. Ваш бонус: подкаст «5 врат».</div><button id="bonusBtn1" class="btn-audio btn-secondary">🎁 Забрать бонус-подкаст</button><button id="offerBtn1" class="btn-audio">→ КЛЮЧИ</button><div><button id="backStepsBtn1" class="back-home">← Назад</button><button id="homeStepsBtn1" class="back-home">На главную</button></div></div>`;
+                document.getElementById('dynamicPanel').innerHTML = `<div class="meditation-card"><div class="med-title">📝 Три шага к почти волшебству</div><div class="med-sub">1. Запишите ощущение после практики.<br>2. Спросите: «Что могу сделать, чтобы продлить состояние?»<br>3. Ваш бонус: подкаст «5 врат».</div><button id="bonusBtn1" class="btn-audio btn-secondary">🎁 Забрать бонус-подкаст</button><button id="offerBtn1" class="btn-audio">→ КЛЮЧИ</button><div><button id="backStepsBtn1" class="back-home">← Назад</button><button id="homeStepsBtn1" class="back-home">На главную</button></div></div>`;
                 document.getElementById('bonusBtn1')?.addEventListener('click', () => {
                     const bonusCard = document.createElement('div');
                     bonusCard.className = 'meditation-card';
                     bonusCard.innerHTML = `<div class="med-title">🎁 Бонус: подкаст «5 врат»</div><div id="bonusPlayer"></div><button class="back-home" id="closeBonus">Закрыть</button>`;
-                    dynamicDiv.innerHTML = ''; dynamicDiv.appendChild(bonusCard);
+                    document.getElementById('dynamicPanel').innerHTML = ''; document.getElementById('dynamicPanel').appendChild(bonusCard);
                     const fakeNext = document.createElement('button'); fakeNext.style.display = 'none';
                     initCustomPlayer(AUDIO_URLS.bonus, document.getElementById('bonusPlayer'), () => {}, fakeNext);
                     document.getElementById('closeBonus')?.addEventListener('click', () => renderStep1());
@@ -557,47 +607,41 @@
                 document.getElementById('offerBtn1')?.addEventListener('click', () => renderOffer1());
                 document.getElementById('backStepsBtn1')?.addEventListener('click', () => { if(stepHistory1.length) currentStep1 = stepHistory1.pop(); else if(currentStep1>0) currentStep1--; renderStep1(); });
                 document.getElementById('homeStepsBtn1')?.addEventListener('click', showHome);
-                homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
+                document.getElementById('homeScreen').classList.add('hidden'); document.getElementById('dynamicPanel').classList.remove('hidden');
             }
         }
         function renderOffer1() {
-            dynamicDiv.innerHTML = `<div class="meditation-card offer-card"><div class="med-title">🔑 Остальные 3 ключа</div><div class="med-sub">✨ Ключ 2. Золотое сияние — 890 ₽<br>🧘 Ключ 3. Искусство быть — 1390 ₽<br>🌱 Ключ 4. Субстрат жизненности — 1890 ₽<br><br>🎁 Все три ключа (2+3+4) — 2990 ₽ (экономия 1480 ₽)</div><button id="offerHome1" class="back-home">← на главную</button></div>`;
+            document.getElementById('dynamicPanel').innerHTML = `<div class="meditation-card offer-card"><div class="med-title">🔑 Остальные 3 ключа</div><div class="med-sub">✨ Ключ 2. Золотое сияние — 890 ₽<br>🧘 Ключ 3. Искусство быть — 1390 ₽<br>🌱 Ключ 4. Субстрат жизненности — 1890 ₽<br><br>🎁 Все три ключа (2+3+4) — 2990 ₽ (экономия 1480 ₽)</div><button id="offerHome1" class="back-home">← на главную</button></div>`;
             document.getElementById('offerHome1')?.addEventListener('click', showHome);
-            homeDiv.classList.add('hidden'); dynamicDiv.classList.remove('hidden');
+            document.getElementById('homeScreen').classList.add('hidden'); document.getElementById('dynamicPanel').classList.remove('hidden');
         }
         function showHome() {
             stopActiveAudio();
             if(currentAudio1) { currentAudio1.pause(); currentAudio1=null; }
-            dynamicDiv.classList.add('hidden');
-            homeDiv.classList.remove('hidden');
-            dynamicDiv.innerHTML = '';
-            isPlaying1 = false;
-            loadUserStatus();
+            goHome();
         }
 
-        // ------------------- ОБРАБОТЧИКИ КЛЮЧЕЙ (ИСПРАВЛЕННЫЙ) -------------------
+        // ------------------- ОБРАБОТЧИКИ КЛЮЧЕЙ -------------------
         async function onKeyClick(keyId) {
-            // Ключ 1 бесплатный
             if (keyId === 'key1') {
                 currentStep1 = 0; stepHistory1 = []; renderStep1();
                 return;
             }
-            // Если уже куплен — открыть контент
+            // Для платных ключей: сначала принудительно обновляем статус с сервера
+            await refreshUserStatusAndUI();
             if (userStatus[keyId]) {
                 await openKeyContent(keyId);
-                return;
+            } else {
+                const tributeMap = {
+                    key2: { link: TRIBUTE_LINKS.key2, title: 'КЛЮЧ 2', price: '890 ₽' },
+                    key3: { link: TRIBUTE_LINKS.key3, title: 'КЛЮЧ 3', price: '1390 ₽' },
+                    key4: { link: TRIBUTE_LINKS.key4, title: 'КЛЮЧ 4', price: '1890 ₽' }
+                };
+                const item = tributeMap[keyId];
+                if (!item) return;
+                const confirmed = confirm(`${item.title} — ${item.price}\n\nДоступ открывается после оплаты. Перейти к оплате через Tribute?`);
+                if (confirmed) openTributePayment(item.link, keyId);
             }
-            // Если не куплен — открыть Tribute
-            const tributeMap = {
-                key2: { link: TRIBUTE_LINKS.key2, title: 'КЛЮЧ 2' },
-                key3: { link: TRIBUTE_LINKS.key3, title: 'КЛЮЧ 3' },
-                key4: { link: TRIBUTE_LINKS.key4, title: 'КЛЮЧ 4' }
-            };
-            const item = tributeMap[keyId];
-            if (!item) { alert('Неизвестный ключ'); return; }
-            const confirmed = confirm(`${item.title} платный.\n\nОткрыть оплату через Tribute?`);
-            if (!confirmed) return;
-            openTributePayment(item.link, keyId);
         }
 
         document.querySelectorAll('.key-card').forEach(card => {
@@ -609,8 +653,13 @@
         document.getElementById('buyAllBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.all, 'all'));
         document.getElementById('donateBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.donate, null));
 
+        // Инициализация
         showHome();
         if (window.Telegram?.WebApp) { window.Telegram.WebApp.ready(); window.Telegram.WebApp.expand(); }
+        loadUserStatus();
+        // Периодическая проверка статуса при фокусе
+        window.addEventListener('focus', () => refreshUserStatusAndUI());
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshUserStatusAndUI(); });
     </script>
 </body>
 </html>
