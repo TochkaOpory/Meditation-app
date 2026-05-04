@@ -158,48 +158,82 @@
         }
 
         // ------------------- ОПЛАТА -------------------
-        function openTributePayment(link, keyId) {
-            const paymentId = Date.now().toString();
-            localStorage.setItem('pending_payment_id', paymentId);
-            localStorage.setItem('pending_payment_key', keyId);
-            startLongPolling(paymentId);
-            if (window.Telegram?.WebApp) window.Telegram.WebApp.openLink(link);
-            else window.open(link, '_blank');
-        }
+       function openTributePayment(link, keyId) {
 
-        let pollingInterval = null;
-        function startLongPolling(paymentId) {
-            if (pollingInterval) clearInterval(pollingInterval);
-            pollingInterval = setInterval(async () => {
-                try {
-                    const resp = await fetch(`${WORKER_URL}/check-payment?id=${paymentId}`);
-                    const data = await resp.json();
-                    if (data.paid === true) {
-                        clearInterval(pollingInterval);
-                        await loadUserStatus();
-                        localStorage.removeItem('pending_payment_id');
-                        alert('✅ Оплата подтверждена! Доступ открыт.');
-                    }
-                } catch (err) {}
-            }, 5000);
-            setTimeout(() => { if (pollingInterval) { clearInterval(pollingInterval); pollingInterval = null; } }, 600000);
+    // Открываем Tribute
+    if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.openLink(link);
+    } else {
+        window.open(link, '_blank');
+    }
+
+    // После возврата в приложение обновляем статус
+    const refreshOnFocus = async () => {
+        await loadUserStatus();
+
+        window.removeEventListener('focus', refreshOnFocus);
+        document.removeEventListener('visibilitychange', visibilityHandler);
+    };
+
+    const visibilityHandler = async () => {
+        if (!document.hidden) {
+            await refreshOnFocus();
         }
+    };
+
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', visibilityHandler);
+}
 
         // ------------------- ЗАГРУЗКА КОНТЕНТА ИЗ MONGODB -------------------
-        async function loadKeyContent(keyId) {
-            const webApp = window.Telegram?.WebApp;
-            if (!webApp || !webApp.initData) return null;
-            try {
-                const response = await fetch(`${WORKER_URL}/get-content?initData=${encodeURIComponent(webApp.initData)}&key=${keyId}`);
-                if (response.ok) {
-                    return await response.json();
-                } else {
-                    if (response.status === 403) alert('Доступ запрещён');
-                    return null;
-                }
-            } catch(e) { console.error(e); return null; }
-        }
+    async function onKeyClick(keyId) {
 
+    // ---------------- КЛЮЧ 1 ----------------
+    if (keyId === 'key1') {
+        currentStep1 = 0;
+        stepHistory1 = [];
+        renderStep1();
+        return;
+    }
+
+    // ---------------- ЕСЛИ КУПЛЕН ----------------
+    if (userStatus[keyId]) {
+        await openKeyContent(keyId);
+        return;
+    }
+
+    // ---------------- ССЫЛКИ НА TRIBUTE ----------------
+    const tributeMap = {
+        key2: {
+            link: TRIBUTE_LINKS.key2,
+            title: 'КЛЮЧ 2'
+        },
+        key3: {
+            link: TRIBUTE_LINKS.key3,
+            title: 'КЛЮЧ 3'
+        },
+        key4: {
+            link: TRIBUTE_LINKS.key4,
+            title: 'КЛЮЧ 4'
+        }
+    };
+
+    const item = tributeMap[keyId];
+
+    if (!item) {
+        alert('Неизвестный ключ');
+        return;
+    }
+
+    // ---------------- ОКНО ОПЛАТЫ ----------------
+    const confirmed = confirm(
+        `${item.title} платный.\n\nОткрыть оплату через Tribute?`
+    );
+
+    if (!confirmed) return;
+
+    openTributePayment(item.link, keyId);
+}
         // ------------------- НАВИГАЦИЯ ПО ШАГАМ -------------------
         let currentContent = null;
         let currentStepIndex = 0;
@@ -361,19 +395,68 @@
             }
         }
 
-        async function openKeyContent(keyId) {
-            if (!userStatus[keyId]) {
-                alert('Доступ закрыт');
-                return;
-            }
-            const content = await loadKeyContent(keyId);
-            if (!content || !content.steps) return;
-            currentContent = content;
+     async function openKeyContent(keyId) {
+
+    if (!userStatus[keyId]) {
+        alert('Доступ закрыт');
+        return;
+    }
+
+    const content = await loadKeyContent(keyId);
+
+    if (!content || !content.steps) {
+        alert('Не удалось загрузить контент');
+        return;
+    }
+
+    currentContent = content;
+
+    // ---------------- ВОССТАНОВЛЕНИЕ ПРОГРЕССА ----------------
+    const savedProgress = localStorage.getItem(
+        `key_${keyId}_progress`
+    );
+
+    if (savedProgress) {
+
+        try {
+
+            const progress = JSON.parse(savedProgress);
+
+            currentStepIndex = progress.stepIndex || 0;
+
+            stepHistory = progress.history || [];
+
+        } catch {
+
             currentStepIndex = 0;
             stepHistory = [];
-            if (content.steps[0] && content.steps[0].type === 'welcome' && welcomeShown[keyId]) {
-                currentStepIndex++;
-            }
+
+        }
+
+    } else {
+
+        currentStepIndex = 0;
+        stepHistory = [];
+
+    }
+
+    // ---------------- ПРОПУСК WELCOME ----------------
+    welcomeShown = JSON.parse(
+        localStorage.getItem('welcomeShown') ||
+        '{"key2":false,"key3":false,"key4":false}'
+    );
+
+    if (
+        content.steps[0] &&
+        content.steps[0].type === 'welcome' &&
+        welcomeShown[keyId] &&
+        currentStepIndex === 0
+    ) {
+        currentStepIndex = 1;
+    }
+
+    renderCurrentStep();
+}
             renderCurrentStep();
         }
 
@@ -393,20 +476,44 @@
             const step = currentContent.steps[currentStepIndex];
             renderStep(step);
         }
+function nextStep() {
 
-        function nextStep() {
-            if (!currentContent) return;
-            stopActiveAudio();
-            stepHistory.push(currentStepIndex);
-            currentStepIndex++;
-            localStorage.setItem(`key_${currentContent.key_id}_progress`, JSON.stringify({
-                stepIndex: currentStepIndex,
-                history: stepHistory,
-                welcomeShown: true
-            }));
-            renderCurrentStep();
-        }
+    if (!currentContent) return;
 
+    stopActiveAudio();
+
+    // ---------------- СОХРАНЕНИЕ WELCOME ----------------
+    if (
+        currentStepIndex === 0 &&
+        currentContent.steps[0] &&
+        currentContent.steps[0].type === 'welcome'
+    ) {
+
+        welcomeShown[currentContent.key_id] = true;
+
+        localStorage.setItem(
+            'welcomeShown',
+            JSON.stringify(welcomeShown)
+        );
+    }
+
+    // ---------------- ИСТОРИЯ ----------------
+    stepHistory.push(currentStepIndex);
+
+    currentStepIndex++;
+
+    // ---------------- СОХРАНЕНИЕ ПРОГРЕССА ----------------
+    localStorage.setItem(
+        `key_${currentContent.key_id}_progress`,
+        JSON.stringify({
+            stepIndex: currentStepIndex,
+            history: stepHistory
+        })
+    );
+
+    renderCurrentStep();
+}
+        
         function prevStep() {
             if (!currentContent) return;
             stopActiveAudio();
