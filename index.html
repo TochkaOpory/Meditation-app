@@ -550,23 +550,54 @@
         }
 
         // ------------------- ОБРАБОТЧИКИ КЛЮЧЕЙ -------------------
-        async function onKeyClick(keyId) {
-            if (keyId === 'key1') {
-                currentStep1 = 0; stepHistory1 = []; renderStep1();
-                return;
-            }
-            if (userStatus[keyId]) {
-                await openKeyContent(keyId);
-                return;
-            }
-            if (keyId === 'key4') {
-                if (confirm('КЛЮЧ 4 платный. Открыть оплату через Tribute?')) {
-                    openTributePayment(TRIBUTE_LINKS.key4, 'key4');
-                }
-            } else {
-                alert('Доступ закрыт. Оплатите ключ через Tribute.');
-            }
+       async function onKeyClick(keyId) {
+
+    // ---------------- КЛЮЧ 1 ----------------
+    if (keyId === 'key1') {
+        currentStep1 = 0;
+        stepHistory1 = [];
+        renderStep1();
+        return;
+    }
+
+    // ---------------- ЕСЛИ КУПЛЕН ----------------
+    if (userStatus[keyId]) {
+        await openKeyContent(keyId);
+        return;
+    }
+
+    // ---------------- ССЫЛКИ НА TRIBUTE ----------------
+    const tributeMap = {
+        key2: {
+            link: TRIBUTE_LINKS.key2,
+            title: 'КЛЮЧ 2'
+        },
+        key3: {
+            link: TRIBUTE_LINKS.key3,
+            title: 'КЛЮЧ 3'
+        },
+        key4: {
+            link: TRIBUTE_LINKS.key4,
+            title: 'КЛЮЧ 4'
         }
+    };
+
+    const item = tributeMap[keyId];
+
+    if (!item) {
+        alert('Неизвестный ключ');
+        return;
+    }
+
+    // ---------------- ОТКРЫТИЕ ОПЛАТЫ ----------------
+    const confirmed = confirm(
+        `${item.title} платный.\n\nОткрыть оплату через Tribute?`
+    );
+
+    if (!confirmed) return;
+
+    openTributePayment(item.link, keyId);
+}
 
         document.querySelectorAll('.key-card').forEach(card => {
             card.addEventListener('click', (e) => {
