@@ -74,7 +74,7 @@
     </div>
     <script>
         // ------------------------------------------------------------------
-        // 1. МАНДАЛА (без изменений)
+        // 1. МАНДАЛА
         // ------------------------------------------------------------------
         const canvas = document.getElementById('mandalaCanvas');
         let ctx = canvas.getContext('2d');
@@ -131,8 +131,11 @@
                 const resp = await fetch(`${WORKER_URL}/user-status?initData=${encodeURIComponent(webApp.initData)}`);
                 if (resp.ok) {
                     userStatus = await resp.json();
-                    completed = JSON.parse(localStorage.getItem('completed') || '{"key2":false,"key3":false}');
-                    welcomeShown = JSON.parse(localStorage.getItem('welcomeShown') || '{"key2":false,"key3":false,"key4":false}');
+                    // Загружаем локальный прогресс (незащищённая часть)
+                    const savedCompleted = localStorage.getItem('completed');
+                    if (savedCompleted) completed = JSON.parse(savedCompleted);
+                    const savedWelcome = localStorage.getItem('welcomeShown');
+                    if (savedWelcome) welcomeShown = JSON.parse(savedWelcome);
                     updateStatusUI();
                 }
             } catch(e) { console.error(e); }
@@ -157,83 +160,42 @@
             }
         }
 
-        // ------------------- ОПЛАТА -------------------
-       function openTributePayment(link, keyId) {
-
-    // Открываем Tribute
-    if (window.Telegram?.WebApp) {
-        window.Telegram.WebApp.openLink(link);
-    } else {
-        window.open(link, '_blank');
-    }
-
-    // После возврата в приложение обновляем статус
-    const refreshOnFocus = async () => {
-        await loadUserStatus();
-
-        window.removeEventListener('focus', refreshOnFocus);
-        document.removeEventListener('visibilitychange', visibilityHandler);
-    };
-
-    const visibilityHandler = async () => {
-        if (!document.hidden) {
-            await refreshOnFocus();
+        // ------------------- ОПЛАТА (без long polling) -------------------
+        function openTributePayment(link, keyId) {
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.openLink(link);
+            } else {
+                window.open(link, '_blank');
+            }
+            // После возврата в приложение — обновим статус (при фокусе)
         }
-    };
 
-    window.addEventListener('focus', refreshOnFocus);
-    document.addEventListener('visibilitychange', visibilityHandler);
-}
+        // При возврате в приложение перезапрашиваем статус
+        window.addEventListener('focus', () => {
+            loadUserStatus();
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) loadUserStatus();
+        });
 
         // ------------------- ЗАГРУЗКА КОНТЕНТА ИЗ MONGODB -------------------
-    async function onKeyClick(keyId) {
-
-    // ---------------- КЛЮЧ 1 ----------------
-    if (keyId === 'key1') {
-        currentStep1 = 0;
-        stepHistory1 = [];
-        renderStep1();
-        return;
-    }
-
-    // ---------------- ЕСЛИ КУПЛЕН ----------------
-    if (userStatus[keyId]) {
-        await openKeyContent(keyId);
-        return;
-    }
-
-    // ---------------- ССЫЛКИ НА TRIBUTE ----------------
-    const tributeMap = {
-        key2: {
-            link: TRIBUTE_LINKS.key2,
-            title: 'КЛЮЧ 2'
-        },
-        key3: {
-            link: TRIBUTE_LINKS.key3,
-            title: 'КЛЮЧ 3'
-        },
-        key4: {
-            link: TRIBUTE_LINKS.key4,
-            title: 'КЛЮЧ 4'
+        async function loadKeyContent(keyId) {
+            const webApp = window.Telegram?.WebApp;
+            if (!webApp || !webApp.initData) return null;
+            try {
+                const response = await fetch(`${WORKER_URL}/get-content?initData=${encodeURIComponent(webApp.initData)}&key=${keyId}`);
+                if (response.ok) {
+                    return await response.json();
+                } else if (response.status === 403) {
+                    alert('Доступ запрещён');
+                    return null;
+                } else {
+                    console.error('Load content error', response.status);
+                    return null;
+                }
+            } catch(e) { console.error(e); return null; }
         }
-    };
 
-    const item = tributeMap[keyId];
-
-    if (!item) {
-        alert('Неизвестный ключ');
-        return;
-    }
-
-    // ---------------- ОКНО ОПЛАТЫ ----------------
-    const confirmed = confirm(
-        `${item.title} платный.\n\nОткрыть оплату через Tribute?`
-    );
-
-    if (!confirmed) return;
-
-    openTributePayment(item.link, keyId);
-}
         // ------------------- НАВИГАЦИЯ ПО ШАГАМ -------------------
         let currentContent = null;
         let currentStepIndex = 0;
@@ -395,69 +357,43 @@
             }
         }
 
-     async function openKeyContent(keyId) {
-
-    if (!userStatus[keyId]) {
-        alert('Доступ закрыт');
-        return;
-    }
-
-    const content = await loadKeyContent(keyId);
-
-    if (!content || !content.steps) {
-        alert('Не удалось загрузить контент');
-        return;
-    }
-
-    currentContent = content;
-
-    // ---------------- ВОССТАНОВЛЕНИЕ ПРОГРЕССА ----------------
-    const savedProgress = localStorage.getItem(
-        `key_${keyId}_progress`
-    );
-
-    if (savedProgress) {
-
-        try {
-
-            const progress = JSON.parse(savedProgress);
-
-            currentStepIndex = progress.stepIndex || 0;
-
-            stepHistory = progress.history || [];
-
-        } catch {
-
-            currentStepIndex = 0;
-            stepHistory = [];
-
-        }
-
-    } else {
-
-        currentStepIndex = 0;
-        stepHistory = [];
-
-    }
-
-    // ---------------- ПРОПУСК WELCOME ----------------
-    welcomeShown = JSON.parse(
-        localStorage.getItem('welcomeShown') ||
-        '{"key2":false,"key3":false,"key4":false}'
-    );
-
-    if (
-        content.steps[0] &&
-        content.steps[0].type === 'welcome' &&
-        welcomeShown[keyId] &&
-        currentStepIndex === 0
-    ) {
-        currentStepIndex = 1;
-    }
-
-    renderCurrentStep();
-}
+        async function openKeyContent(keyId) {
+            if (!userStatus[keyId]) {
+                alert('Доступ закрыт');
+                return;
+            }
+            const content = await loadKeyContent(keyId);
+            if (!content || !content.steps) {
+                alert('Не удалось загрузить контент');
+                return;
+            }
+            currentContent = content;
+            // Восстанавливаем прогресс
+            const savedProgress = localStorage.getItem(`key_${keyId}_progress`);
+            if (savedProgress) {
+                try {
+                    const progress = JSON.parse(savedProgress);
+                    currentStepIndex = progress.stepIndex || 0;
+                    stepHistory = progress.history || [];
+                } catch {
+                    currentStepIndex = 0;
+                    stepHistory = [];
+                }
+            } else {
+                currentStepIndex = 0;
+                stepHistory = [];
+            }
+            // Пропускаем welcome, если уже показывали
+            if (
+                content.steps[0] &&
+                content.steps[0].type === 'welcome' &&
+                welcomeShown[keyId] &&
+                currentStepIndex === 0
+            ) {
+                currentStepIndex = 1;
+            }
             renderCurrentStep();
+        }
 
         function renderCurrentStep() {
             if (!currentContent || currentStepIndex >= currentContent.steps.length) {
@@ -475,44 +411,28 @@
             const step = currentContent.steps[currentStepIndex];
             renderStep(step);
         }
-function nextStep() {
 
-    if (!currentContent) return;
+        function nextStep() {
+            if (!currentContent) return;
+            stopActiveAudio();
+            // Сохраняем welcomeShown при прохождении первого шага welcome
+            if (
+                currentStepIndex === 0 &&
+                currentContent.steps[0] &&
+                currentContent.steps[0].type === 'welcome'
+            ) {
+                welcomeShown[currentContent.key_id] = true;
+                localStorage.setItem('welcomeShown', JSON.stringify(welcomeShown));
+            }
+            stepHistory.push(currentStepIndex);
+            currentStepIndex++;
+            localStorage.setItem(`key_${currentContent.key_id}_progress`, JSON.stringify({
+                stepIndex: currentStepIndex,
+                history: stepHistory
+            }));
+            renderCurrentStep();
+        }
 
-    stopActiveAudio();
-
-    // ---------------- СОХРАНЕНИЕ WELCOME ----------------
-    if (
-        currentStepIndex === 0 &&
-        currentContent.steps[0] &&
-        currentContent.steps[0].type === 'welcome'
-    ) {
-
-        welcomeShown[currentContent.key_id] = true;
-
-        localStorage.setItem(
-            'welcomeShown',
-            JSON.stringify(welcomeShown)
-        );
-    }
-
-    // ---------------- ИСТОРИЯ ----------------
-    stepHistory.push(currentStepIndex);
-
-    currentStepIndex++;
-
-    // ---------------- СОХРАНЕНИЕ ПРОГРЕССА ----------------
-    localStorage.setItem(
-        `key_${currentContent.key_id}_progress`,
-        JSON.stringify({
-            stepIndex: currentStepIndex,
-            history: stepHistory
-        })
-    );
-
-    renderCurrentStep();
-}
-        
         function prevStep() {
             if (!currentContent) return;
             stopActiveAudio();
@@ -655,55 +575,30 @@ function nextStep() {
             loadUserStatus();
         }
 
-        // ------------------- ОБРАБОТЧИКИ КЛЮЧЕЙ -------------------
-       async function onKeyClick(keyId) {
-
-    // ---------------- КЛЮЧ 1 ----------------
-    if (keyId === 'key1') {
-        currentStep1 = 0;
-        stepHistory1 = [];
-        renderStep1();
-        return;
-    }
-
-    // ---------------- ЕСЛИ КУПЛЕН ----------------
-    if (userStatus[keyId]) {
-        await openKeyContent(keyId);
-        return;
-    }
-
-    // ---------------- ССЫЛКИ НА TRIBUTE ----------------
-    const tributeMap = {
-        key2: {
-            link: TRIBUTE_LINKS.key2,
-            title: 'КЛЮЧ 2'
-        },
-        key3: {
-            link: TRIBUTE_LINKS.key3,
-            title: 'КЛЮЧ 3'
-        },
-        key4: {
-            link: TRIBUTE_LINKS.key4,
-            title: 'КЛЮЧ 4'
+        // ------------------- ОБРАБОТЧИКИ КЛЮЧЕЙ (ИСПРАВЛЕННЫЙ) -------------------
+        async function onKeyClick(keyId) {
+            // Ключ 1 бесплатный
+            if (keyId === 'key1') {
+                currentStep1 = 0; stepHistory1 = []; renderStep1();
+                return;
+            }
+            // Если уже куплен — открыть контент
+            if (userStatus[keyId]) {
+                await openKeyContent(keyId);
+                return;
+            }
+            // Если не куплен — открыть Tribute
+            const tributeMap = {
+                key2: { link: TRIBUTE_LINKS.key2, title: 'КЛЮЧ 2' },
+                key3: { link: TRIBUTE_LINKS.key3, title: 'КЛЮЧ 3' },
+                key4: { link: TRIBUTE_LINKS.key4, title: 'КЛЮЧ 4' }
+            };
+            const item = tributeMap[keyId];
+            if (!item) { alert('Неизвестный ключ'); return; }
+            const confirmed = confirm(`${item.title} платный.\n\nОткрыть оплату через Tribute?`);
+            if (!confirmed) return;
+            openTributePayment(item.link, keyId);
         }
-    };
-
-    const item = tributeMap[keyId];
-
-    if (!item) {
-        alert('Неизвестный ключ');
-        return;
-    }
-
-    // ---------------- ОТКРЫТИЕ ОПЛАТЫ ----------------
-    const confirmed = confirm(
-        `${item.title} платный.\n\nОткрыть оплату через Tribute?`
-    );
-
-    if (!confirmed) return;
-
-    openTributePayment(item.link, keyId);
-}
 
         document.querySelectorAll('.key-card').forEach(card => {
             card.addEventListener('click', (e) => {
