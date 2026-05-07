@@ -852,23 +852,50 @@
                 document.getElementById('homeScreen').classList.add('hidden'); document.getElementById('dynamicPanel').classList.remove('hidden'); return;
             }
         }
-        function startFreeKey(){ freeStepIndex=0; freeHistory=[]; renderFreeStep(); }
         
-        // Новая инициализация с ожиданием Telegram WebApp
-function initApp() {
-  if (window.Telegram && window.Telegram.WebApp) {
-    window.Telegram.WebApp.ready();
-    window.Telegram.WebApp.expand();
-    loadUserStatus();
-    goHome();
-  } else {
-    setTimeout(initApp, 100);
-  }
-}
-document.addEventListener('DOMContentLoaded', initApp);
-window.addEventListener('focus', () => loadUserStatus());
-document.addEventListener('visibilitychange', () => { if (!document.hidden) loadUserStatus(); });
-setInterval(loadUserStatus, 15000);
+        function startFreeKey(){ freeStepIndex=0; freeHistory=[]; renderFreeStep(); }
+               function startFreeKey(){ freeStepIndex=0; freeHistory=[]; renderFreeStep(); }
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        // Обработчики кликов по карточкам
+        document.querySelectorAll('.key-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                const key = card.dataset.key;
+                if (key === 'key1') startFreeKey();
+                else onKeyClick(key);
+            });
+        });
+
+        async function onKeyClick(keyId) {
+            await loadUserStatus();
+            if (userStatus[keyId]) {
+                openKeyContent(keyId);
+            } else {
+                const prices = {key2:'890 ₽', key3:'1390 ₽', key4:'1890 ₽'};
+                if (confirm(`${keyId.toUpperCase()} — ${prices[keyId]}\nОплатить через Tribute?`)) {
+                    openTributePayment(TRIBUTE_LINKS[keyId], keyId);
+                }
+            }
+        }
+
+        document.getElementById('buyAllBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.all, 'all'));
+        document.getElementById('donateBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.donate, null));
+
+        // Инициализация после загрузки Telegram WebApp
+        function initApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+                loadUserStatus().then(() => goHome());
+            } else {
+                setTimeout(initApp, 100);
+            }
+        }
+        initApp();
+
+        window.addEventListener('focus', () => loadUserStatus());
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) loadUserStatus(); });
+        setInterval(loadUserStatus, 15000);
     </script>
 </body>
 </html>
