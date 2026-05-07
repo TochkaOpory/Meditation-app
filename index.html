@@ -26,12 +26,29 @@
         .status-closed { color: #D4AF37; }
         .status-locked { color: #D4AF37; opacity: 0.8; }
         .btn-donate { background: rgba(255,255,255,0.08); border: 1px solid rgba(212,175,55,0.6); color: #FFE5A3; padding: 12px; border-radius: 60px; cursor: pointer; width: 100%; margin-top: 20px; }
-        .meditation-card { background: rgba(8,6,18,0.75); backdrop-filter: blur(14px); border-radius: 48px; padding: 28px 24px; border: 1px solid rgba(212,175,55,0.5); }
-        .med-title { font-family: 'Playfair Display', serif; font-size: 28px; background: linear-gradient(135deg, #FFE6A3, #D4AF37); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .med-sub { font-size: 15px; color: rgba(255,245,210,0.85); margin: 12px 0; border-left: 2px solid #D4AF37; padding-left: 16px; }
+        .meditation-card { background: rgba(8,6,18,0.75); backdrop-filter: blur(14px); border-radius: 48px; padding: 28px 24px; border: 1px solid rgba(212,175,55,0.5); margin: 16px 0; }
+        .med-title { font-family: 'Playfair Display', serif; font-size: 28px; background: linear-gradient(135deg, #FFE6A3, #D4AF37); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 12px; }
+        .med-sub { font-size: 15px; color: rgba(255,245,210,0.85); margin: 12px 0; border-left: 2px solid #D4AF37; padding-left: 16px; line-height: 1.4; }
         .btn-audio { background: linear-gradient(95deg, #D4AF37, #B58F2A); border: none; color: #1f1b0c; font-weight: 700; padding: 12px; border-radius: 60px; cursor: pointer; width: 100%; margin-top: 16px; }
         .btn-secondary { background: transparent; border: 1px solid #D4AF37; color: #FFE6A3; }
-        .back-home { background: rgba(0,0,0,0.5); border: 1px solid rgba(212,175,55,0.6); color: #FFE9B6; padding: 8px 14px; border-radius: 40px; cursor: pointer; display: inline-block; margin-top: 12px; margin-right: 8px; }
+        /* Стили для кнопок навигации */
+        .back-home, .back-to-start {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #D4AF37;
+            color: #FFE9B6;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-block;
+            margin-top: 12px;
+            margin-right: 8px;
+            transition: 0.2s;
+        }
+        .back-home:hover, .back-to-start:hover {
+            background: rgba(212,175,55,0.3);
+            border-color: #FFD966;
+        }
         .hidden { display: none; }
         .custom-player { background: rgba(0,0,0,0.4); border-radius: 60px; padding: 18px; margin: 20px 0; }
         .player-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
@@ -40,7 +57,13 @@
         .seek-bar { flex: 2; height: 5px; background: #3a2e1a; border-radius: 10px; cursor: pointer; }
         .speed-select { background: #1f1c10; border: 1px solid #D4AF37; border-radius: 40px; padding: 6px 12px; color: #FFE6A3; }
         .fullscreen-audio-card { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2,1,12,0.95); backdrop-filter: blur(20px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 24px; overflow-y: auto; }
+        .image-container { margin: 20px 0; text-align: center; }
+        .image-container img { max-width: 100%; border-radius: 24px; box-shadow: 0 0 12px rgba(212,175,55,0.3); }
+        .quiz-question { margin: 20px 0; background: rgba(0,0,0,0.4); padding: 16px; border-radius: 24px; border-left: 3px solid #D4AF37; font-size: 14px; line-height: 1.4; }
         .note { font-size: 11px; color: rgba(212,175,55,0.8); text-align: center; margin-top: 20px; }
+        .error-message { background: rgba(180,60,50,0.8); padding: 18px; border-radius: 32px; text-align: center; }
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #D4AF37; border-top-color: #FFD966; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -81,9 +104,6 @@
             donate: 'https://t.me/tribute/app?startapp=dJwq'
         };
         const AUDIO_URLS = {
-            setup: "https://files.catbox.moe/qipf0o.mp3",
-            key1: "https://files.catbox.moe/udem2c.mp3",
-            integration: "https://files.catbox.moe/vmafp1.mp3",
             bonus: "https://files.catbox.moe/mhz6kz.mp3"
         };
 
@@ -92,9 +112,8 @@
         let welcomeShown = { key2: false, key3: false, key4: false };
         let currentContent = null, currentStepIndex = 0, stepHistory = [];
         let activeAudio = null;
-        let freeStepIndex = 0, freeHistory = [], freeAudio = null;
 
-        function stopActiveAudio() { if(activeAudio) { activeAudio.pause(); activeAudio=null; } if(freeAudio) { freeAudio.pause(); freeAudio=null; } }
+        function stopActiveAudio() { if(activeAudio) { activeAudio.pause(); activeAudio=null; } }
 
         async function loadUserStatus() {
             const webApp = window.Telegram?.WebApp;
@@ -145,34 +164,61 @@
             return null;
         }
 
-        // ==================== ФУНКЦИИ ОТОБРАЖЕНИЯ КОНТЕНТА ====================
         function formatTime(sec) { if(isNaN(sec)) return "0:00"; const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
+
+        function showBonusPodcast() {
+            stopActiveAudio();
+            const wrapper = document.createElement('div'); wrapper.className = 'fullscreen-audio-card';
+            const card = document.createElement('div'); card.className = 'meditation-card';
+            card.innerHTML = `<div class="med-title">🎁 Бонус: подкаст «5 врат»</div><div class="med-sub">Дополнительная аудиопрактика.</div><div id="bonusPlayerContainer"></div><button id="closeBonusBtn" class="btn-audio btn-secondary">Закрыть</button>`;
+            wrapper.appendChild(card);
+            const panel = document.getElementById('dynamicPanel'); panel.innerHTML = ''; panel.appendChild(wrapper);
+            panel.classList.remove('hidden'); document.getElementById('homeScreen').classList.add('hidden');
+            const container = document.getElementById('bonusPlayerContainer');
+            const audio = new Audio(AUDIO_URLS.bonus);
+            audio.preload = 'metadata';
+            const playerDiv = document.createElement('div'); playerDiv.className = 'custom-player';
+            playerDiv.innerHTML = `<div class="player-controls"><button class="play-btn">▶</button><span class="time">0:00 / 0:00</span><input type="range" class="seek-bar" value="0" step="0.01"><select class="speed-select"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select></div>`;
+            container.appendChild(playerDiv);
+            const playBtn = playerDiv.querySelector('.play-btn'), timeSpan = playerDiv.querySelector('.time'), seekBar = playerDiv.querySelector('.seek-bar'), speedSelect = playerDiv.querySelector('.speed-select');
+            let playing = false;
+            audio.addEventListener('loadedmetadata',()=>{ if(isFinite(audio.duration)){ seekBar.max=audio.duration; timeSpan.innerText=`0:00 / ${formatTime(audio.duration)}`; } });
+            audio.addEventListener('timeupdate',()=>{ if(!isNaN(audio.duration)){ seekBar.value=audio.currentTime; timeSpan.innerText=`${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`; } });
+            audio.addEventListener('ended',()=>{ playing=false; playBtn.innerText='▶'; });
+            playBtn.addEventListener('click',()=>{ if(playing){ audio.pause(); playBtn.innerText='▶'; playing=false; } else { audio.play().catch(console.log); playBtn.innerText='⏸'; playing=true; } });
+            seekBar.addEventListener('input',()=>{ audio.currentTime=parseFloat(seekBar.value); });
+            speedSelect.addEventListener('change',()=>{ audio.playbackRate=parseFloat(speedSelect.value); });
+            activeAudio = audio;
+            document.getElementById('closeBonusBtn').addEventListener('click',()=>{ stopActiveAudio(); goHome(); });
+        }
 
         function renderStepWithFullscreen(step, nextCallback, backCallback, homeCallback, startCallback) {
             const isAudioStep = (step.type==='audio' || step.type==='audio_with_text' || step.type==='audio_with_image');
             const wrapperDiv = document.createElement('div');
             if(isAudioStep) { wrapperDiv.className = 'fullscreen-audio-card'; wrapperDiv.style.animation = 'fadeInUp 0.4s ease'; }
-            const cardDiv = document.createElement('div');
-            cardDiv.className = 'meditation-card';
+            const cardDiv = document.createElement('div'); cardDiv.className = 'meditation-card';
             let innerHtml = '';
-            if(step.type==='welcome' || step.type==='text') innerHtml = `<div class="med-title">📘 Информация</div><div class="med-sub">${(step.content||step.text||'').replace(/\n/g,'<br>')}</div><button id="stepNextBtn" class="btn-audio">Далее</button>`;
-            else if(isAudioStep) {
+            if(step.type==='welcome' || step.type==='text') {
+                innerHtml = `<div class="med-title">📘 Информация</div><div class="med-sub">${(step.content||step.text||'').replace(/\n/g,'<br>')}</div><button id="stepNextBtn" class="btn-audio">Далее</button>`;
+            } else if(step.type==='audio' || step.type==='audio_with_text' || step.type==='audio_with_image') {
                 innerHtml = `<div class="med-title">${step.title||'🎧 Аудио'}</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div>`;
-                if(step.type==='audio_with_image') innerHtml += `<div class="image-container"><img src="${step.image}" alt="illustration"></div>`;
+                if(step.type==='audio_with_image') innerHtml += `<div class="image-container"><img src="${step.image}" alt="illustration" loading="lazy"></div>`;
                 innerHtml += `<div id="playerContainer"></div><button id="stepNextBtn" class="btn-audio">${step.btnText||'Далее'}</button>`;
             } else if(step.type==='images_with_text') {
-                innerHtml = `<div class="med-title">🖼️ Картинки</div><div class="med-sub">${step.text.replace(/\n/g,'<br>')}</div><button id="showImagesBtn" class="btn-audio btn-secondary">${step.btnText||'Показать картинки'}</button><div id="hiddenImages" style="display:none;">${step.images.map(src=>`<div class="image-container"><img src="${src}"></div>`).join('')}</div><button id="stepNextBtn" class="btn-audio" style="margin-top:20px;">Далее →</button>`;
+                innerHtml = `<div class="med-title">🖼️ Картинки</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div><button id="showImagesBtn" class="btn-audio btn-secondary">${step.btnText||'Показать картинки'}</button><div id="hiddenImages" style="display:none;">${step.images.map(src=>`<div class="image-container"><img src="${src}" loading="lazy"></div>`).join('')}</div><button id="stepNextBtn" class="btn-audio" style="margin-top:20px;">Далее →</button>`;
             } else if(step.type==='quiz') {
-                innerHtml = `<div class="med-title">📝 Осмысление</div><div class="med-sub">${step.text.replace(/\n/g,'<br>')}</div>${step.questions.map((q,i)=>`<div class="quiz-question">${i+1}. ${q}</div>`).join('')}<button id="stepNextBtn" class="btn-audio">${step.btnText||'Далее'}</button>`;
+                innerHtml = `<div class="med-title">📝 Осмысление</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div>${step.questions.map((q,i)=>`<div class="quiz-question">${i+1}. ${q}</div>`).join('')}<button id="stepNextBtn" class="btn-audio">${step.btnText||'Далее'}</button>`;
             } else if(step.type==='next_key_prompt') {
                 const nextKey = step.nextKey, purchased = userStatus[nextKey];
                 if(purchased) innerHtml = `<div class="med-title">🔓 Переход к следующему ключу</div><div class="med-sub">Вы прошли этот ключ!</div><button id="nextKeyBtn" class="btn-audio">Перейти к ${nextKey==='key3'?'КЛЮЧУ 3':'КЛЮЧУ 4'}</button>`;
                 else innerHtml = `<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">Откройте ${nextKey==='key3'?'КЛЮЧ 3':'КЛЮЧ 4'} за ${nextKey==='key3'?1390:1890} ₽</div><button id="buyNextKeyBtn" class="btn-audio">💳 Купить</button>`;
                 innerHtml += `<button id="homeAfterKeyBtn" class="back-home">← На главную</button>`;
             } else if(step.type==='bonus_pdf') {
-                innerHtml = `<div class="med-title">📘 Бонусный материал</div><div class="med-sub">${step.text.replace(/\n/g,'<br>')}</div><a href="${step.pdf}" target="_blank" class="btn-audio" style="display:inline-block;">${step.btnText}</a><button id="stepNextBtn" class="btn-audio">Далее</button>`;
+                innerHtml = `<div class="med-title">📘 Бонусный материал</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div><a href="${step.pdf}" target="_blank" class="btn-audio" style="display:inline-block;">${step.btnText}</a><button id="stepNextBtn" class="btn-audio">Далее</button>`;
             } else if(step.type==='final_bonus') {
-                innerHtml = `<div class="med-title">🎁 Завершение</div><div class="med-sub">${step.content.replace(/\n/g,'<br>')}</div><button id="stepNextBtn" class="btn-audio">${step.btnText||'Завершить'}</button>`;
+                innerHtml = `<div class="med-title">🎁 Завершение</div><div class="med-sub">${(step.content||'').replace(/\n/g,'<br>')}</div><button id="stepNextBtn" class="btn-audio">${step.btnText||'Завершить'}</button>`;
+            } else if(step.type === 'bonus_podcast') {
+                innerHtml = `<div class="med-title">🎁 Бонус</div><div class="med-sub">${step.content}</div><button id="bonusPodcastBtn" class="btn-audio btn-secondary">${step.btnText}</button><button id="stepNextBtn" class="btn-audio" style="margin-top:20px;">Завершить</button>`;
             }
             innerHtml += `<div style="display:flex; justify-content:space-between; margin-top:20px;"><button id="stepBackBtn" class="back-home">← Назад</button><button id="stepStartBtn" class="back-to-start">🏁 В начало</button><button id="stepHomeBtn" class="back-home">🏠 На главную</button></div>`;
             cardDiv.innerHTML = innerHtml;
@@ -180,13 +226,14 @@
             const panel = document.getElementById('dynamicPanel');
             panel.innerHTML = '';
             panel.appendChild(wrapperDiv);
+            
+            // Обработка аудио-плеера
             if(isAudioStep && step.audio) {
                 const container = document.getElementById('playerContainer');
                 if(container) {
                     const audio = new Audio(step.audio);
                     audio.preload = 'metadata';
-                    const playerDiv = document.createElement('div');
-                    playerDiv.className = 'custom-player';
+                    const playerDiv = document.createElement('div'); playerDiv.className = 'custom-player';
                     playerDiv.innerHTML = `<div class="player-controls"><button class="play-btn">▶</button><span class="time">0:00 / 0:00</span><input type="range" class="seek-bar" value="0" step="0.01"><select class="speed-select"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select></div>`;
                     container.appendChild(playerDiv);
                     const playBtn = playerDiv.querySelector('.play-btn'), timeSpan = playerDiv.querySelector('.time'), seekBar = playerDiv.querySelector('.seek-bar'), speedSelect = playerDiv.querySelector('.speed-select');
@@ -200,6 +247,7 @@
                     activeAudio = audio;
                 }
             }
+            // Обработчики кнопок
             document.getElementById('stepNextBtn')?.addEventListener('click',()=>{ stopActiveAudio(); nextCallback(); });
             document.getElementById('stepBackBtn')?.addEventListener('click',()=>{ stopActiveAudio(); backCallback(); });
             document.getElementById('stepStartBtn')?.addEventListener('click',()=>{ stopActiveAudio(); startCallback(); });
@@ -213,10 +261,17 @@
                 const showBtn = document.getElementById('showImagesBtn'), hiddenDiv = document.getElementById('hiddenImages');
                 showBtn?.addEventListener('click',()=>{ if(hiddenDiv.style.display==='none'){ hiddenDiv.style.display='block'; showBtn.textContent='Скрыть картинки'; } else { hiddenDiv.style.display='none'; showBtn.textContent=step.btnText||'Показать картинки'; } });
             }
+            if(step.type === 'bonus_podcast') {
+                document.getElementById('bonusPodcastBtn')?.addEventListener('click', (e) => { e.preventDefault(); showBonusPodcast(); });
+            }
         }
 
         async function openKeyContent(keyId) {
-            if(!userStatus[keyId]){ showErrorAndGoHome(`Доступ к ключу не оплачен.`); return; }
+            // Ключ 1 – всегда бесплатен
+            if (keyId !== 'key1' && !userStatus[keyId]) {
+                showErrorAndGoHome(`Доступ к ключу не оплачен.`);
+                return;
+            }
             const panel = document.getElementById('dynamicPanel');
             panel.innerHTML = `<div class="meditation-card"><div class="loading-spinner"></div> Загрузка...</div>`;
             panel.classList.remove('hidden');
@@ -248,89 +303,11 @@
         function goHome() { stopActiveAudio(); document.getElementById('dynamicPanel').classList.add('hidden'); document.getElementById('homeScreen').classList.remove('hidden'); currentContent=null; loadUserStatus(); }
         function showErrorAndGoHome(msg) { stopActiveAudio(); const panel=document.getElementById('dynamicPanel'); panel.innerHTML=`<div class="meditation-card error-message">⚠️ ${msg}<br><button id="errorHomeBtn" class="btn-audio">Вернуться</button></div>`; panel.classList.remove('hidden'); document.getElementById('homeScreen').classList.add('hidden'); document.getElementById('errorHomeBtn')?.addEventListener('click',()=>goHome()); }
 
-        // ==================== БОНУС-ПОДКАСТ ====================
-        function showBonusPodcast() {
-            stopActiveAudio();
-            const wrapper = document.createElement('div'); wrapper.className = 'fullscreen-audio-card';
-            const card = document.createElement('div'); card.className = 'meditation-card';
-            card.innerHTML = `<div class="med-title">🎁 Бонус: подкаст «5 врат»</div><div class="med-sub">Дополнительная аудиопрактика.</div><div id="bonusPlayerContainer"></div><button id="closeBonusBtn" class="btn-audio btn-secondary">Закрыть</button>`;
-            wrapper.appendChild(card);
-            const panel = document.getElementById('dynamicPanel'); panel.innerHTML = ''; panel.appendChild(wrapper);
-            panel.classList.remove('hidden'); document.getElementById('homeScreen').classList.add('hidden');
-            const container = document.getElementById('bonusPlayerContainer');
-            const audio = new Audio(AUDIO_URLS.bonus);
-            audio.preload = 'metadata';
-            const playerDiv = document.createElement('div'); playerDiv.className = 'custom-player';
-            playerDiv.innerHTML = `<div class="player-controls"><button class="play-btn">▶</button><span class="time">0:00 / 0:00</span><input type="range" class="seek-bar" value="0" step="0.01"><select class="speed-select"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select></div>`;
-            container.appendChild(playerDiv);
-            const playBtn = playerDiv.querySelector('.play-btn'), timeSpan = playerDiv.querySelector('.time'), seekBar = playerDiv.querySelector('.seek-bar'), speedSelect = playerDiv.querySelector('.speed-select');
-            let playing = false;
-            audio.addEventListener('loadedmetadata',()=>{ if(isFinite(audio.duration)){ seekBar.max=audio.duration; timeSpan.innerText=`0:00 / ${formatTime(audio.duration)}`; } });
-            audio.addEventListener('timeupdate',()=>{ if(!isNaN(audio.duration)){ seekBar.value=audio.currentTime; timeSpan.innerText=`${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`; } });
-            audio.addEventListener('ended',()=>{ playing=false; playBtn.innerText='▶'; });
-            playBtn.addEventListener('click',()=>{ if(playing){ audio.pause(); playBtn.innerText='▶'; playing=false; } else { audio.play().catch(console.log); playBtn.innerText='⏸'; playing=true; } });
-            seekBar.addEventListener('input',()=>{ audio.currentTime=parseFloat(seekBar.value); });
-            speedSelect.addEventListener('change',()=>{ audio.playbackRate=parseFloat(speedSelect.value); });
-            activeAudio = audio;
-            document.getElementById('closeBonusBtn').addEventListener('click',()=>{ stopActiveAudio(); goHome(); });
-        }
-
-        // ==================== БЕСПЛАТНЫЙ КЛЮЧ 1 ====================
-        const freeSteps = [
-            { type: "welcome" },
-            { type: "audio", title: "🎧 Настройка", text: "Слушайте перед медитацией.", audio: AUDIO_URLS.setup, btnText: "ДАЛЕЕ" },
-            { type: "audio", title: "🔑 КЛЮЧ 1 · 5 врат", text: "Закройте глаза, дышите свободно.", audio: AUDIO_URLS.key1, btnText: "ДАЛЕЕ → интеграция" },
-            { type: "audio", title: "🧩 Интеграция", text: "Закрепите состояние.", audio: AUDIO_URLS.integration, btnText: "ДАЛЕЕ" },
-            { type: "steps" }
-        ];
-        function renderFreeStep() {
-            if(freeStepIndex >= freeSteps.length){ goHome(); return; }
-            const step = freeSteps[freeStepIndex];
-            if(step.type === 'welcome') {
-                document.getElementById('dynamicPanel').innerHTML = `<div class="meditation-card"><div class="med-title">👋 Здравствуйте. Меня зовут Михаил</div><div class="med-sub">Что получите:<br>🎧 3 мин — настройка<br>🎧 10 мин — Ключ №1<br>🎧 7 мин — интеграция<br>🎁 бонус-подкаст</div><button id="welcomeBtn" class="btn-audio">ДА</button><button id="homeWelcomeBtn" class="back-home">← на главную</button></div>`;
-                document.getElementById('welcomeBtn')?.addEventListener('click',()=>{ freeHistory.push(freeStepIndex); freeStepIndex++; renderFreeStep(); });
-                document.getElementById('homeWelcomeBtn')?.addEventListener('click',()=>goHome());
-                document.getElementById('homeScreen').classList.add('hidden'); document.getElementById('dynamicPanel').classList.remove('hidden'); return;
-            } else if(step.type === 'audio') {
-                const wrapper = document.createElement('div'); wrapper.className = 'fullscreen-audio-card';
-                const card = document.createElement('div'); card.className = 'meditation-card';
-                card.innerHTML = `<div class="med-title">${step.title}</div><div class="med-sub">${step.text}</div><div id="freePlayer"></div><button id="freeNext" class="btn-audio">${step.btnText}</button><div><button id="freeBack" class="back-home">← Назад</button><button id="freeHome" class="back-home">На главную</button></div>`;
-                wrapper.appendChild(card);
-                document.getElementById('dynamicPanel').innerHTML = ''; document.getElementById('dynamicPanel').appendChild(wrapper);
-                const container = document.getElementById('freePlayer');
-                const audio = new Audio(step.audio);
-                audio.preload = 'metadata';
-                const playerDiv = document.createElement('div'); playerDiv.className = 'custom-player';
-                playerDiv.innerHTML = `<div class="player-controls"><button class="play-btn">▶</button><span class="time">0:00 / 0:00</span><input type="range" class="seek-bar" value="0"><select class="speed-select"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select></div>`;
-                container.appendChild(playerDiv);
-                const playBtn = playerDiv.querySelector('.play-btn'), timeSpan = playerDiv.querySelector('.time'), seekBar = playerDiv.querySelector('.seek-bar'), speedSelect = playerDiv.querySelector('.speed-select');
-                let playing = false;
-                audio.addEventListener('loadedmetadata',()=>{ if(isFinite(audio.duration)){ seekBar.max=audio.duration; timeSpan.innerText=`0:00 / ${formatTime(audio.duration)}`; } });
-                audio.addEventListener('timeupdate',()=>{ if(!isNaN(audio.duration)){ seekBar.value=audio.currentTime; timeSpan.innerText=`${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`; } });
-                audio.addEventListener('ended',()=>{ playing=false; playBtn.innerText='▶'; });
-                playBtn.addEventListener('click',()=>{ if(playing){ audio.pause(); playBtn.innerText='▶'; playing=false; } else { audio.play(); playBtn.innerText='⏸'; playing=true; } });
-                seekBar.addEventListener('input',()=>{ audio.currentTime=parseFloat(seekBar.value); });
-                speedSelect.addEventListener('change',()=>{ audio.playbackRate=parseFloat(speedSelect.value); });
-                freeAudio = audio;
-                document.getElementById('freeNext')?.addEventListener('click',()=>{ if(freeAudio) freeAudio.pause(); freeHistory.push(freeStepIndex); freeStepIndex++; renderFreeStep(); });
-                document.getElementById('freeBack')?.addEventListener('click',()=>{ if(freeAudio) freeAudio.pause(); if(freeHistory.length) freeStepIndex=freeHistory.pop(); else if(freeStepIndex>0) freeStepIndex--; renderFreeStep(); });
-                document.getElementById('freeHome')?.addEventListener('click',()=>goHome());
-                return;
-            } else if(step.type === 'steps') {
-                document.getElementById('dynamicPanel').innerHTML = `<div class="meditation-card"><div class="med-title">📝 Три шага к почти волшебству</div><div class="med-sub">1. Запишите ощущение.<br>2. Спросите: «Что могу сделать, чтобы продлить состояние?»<br>3. Ваш бонус: подкаст «5 врат».</div><button id="bonusBtn" class="btn-audio btn-secondary">🎁 Забрать бонус-подкаст</button><button id="finishFree" class="btn-audio">→ Завершить</button><div><button id="freeBackStep" class="back-home">← Назад</button><button id="freeHomeStep" class="back-home">На главную</button></div></div>`;
-                document.getElementById('bonusBtn')?.addEventListener('click',()=>showBonusPodcast());
-                document.getElementById('finishFree')?.addEventListener('click',()=>goHome());
-                document.getElementById('freeBackStep')?.addEventListener('click',()=>{ if(freeHistory.length) freeStepIndex=freeHistory.pop(); else if(freeStepIndex>0) freeStepIndex--; renderFreeStep(); });
-                document.getElementById('freeHomeStep')?.addEventListener('click',()=>goHome());
-                document.getElementById('homeScreen').classList.add('hidden'); document.getElementById('dynamicPanel').classList.remove('hidden'); return;
-            }
-        }
-        function startFreeKey(){ freeStepIndex=0; freeHistory=[]; renderFreeStep(); }
-
-        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         async function onKeyClick(keyId) {
             await loadUserStatus();
-            if(userStatus[keyId]) {
+            if(keyId === 'key1') {
+                openKeyContent(keyId);
+            } else if(userStatus[keyId]) {
                 openKeyContent(keyId);
             } else {
                 const prices = {key2:'890 ₽', key3:'1390 ₽', key4:'1890 ₽'};
@@ -343,8 +320,7 @@
         document.querySelectorAll('.key-card').forEach(card => {
             card.addEventListener('click', () => {
                 const key = card.dataset.key;
-                if(key === 'key1') startFreeKey();
-                else onKeyClick(key);
+                onKeyClick(key);
             });
         });
         document.getElementById('buyAllBtn')?.addEventListener('click', () => openTributePayment(TRIBUTE_LINKS.all));
