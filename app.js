@@ -1,4 +1,4 @@
-// ======================== 3D ФОН ========================
+// ======================== 3D ФОН (оригинальный) ========================
 (function initCosmicBackground() {
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x02010a, 0.05);
@@ -16,6 +16,7 @@
     scene.add(entityGroup);
     entityGroup.add(bodyGroup);
     
+    // Stars
     const starGeo = new THREE.BufferGeometry();
     const starCount = 3000;
     const starPos = new Float32Array(starCount * 3);
@@ -38,6 +39,7 @@
     const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ size: 0.05, vertexColors: true, transparent: true, opacity: 0.8 }));
     universeGroup.add(stars);
     
+    // body particles
     const bodyPoints = [];
     function addVolumePoints(radius, height, count, offset, isSphere=true) {
         for(let i=0;i<count;i++) {
@@ -151,7 +153,7 @@ let activeAudio = null;
 
 let currentLang = localStorage.getItem('app_lang') || 'ru';
 
-// ======================== ЛОКАЛИЗАЦИЯ ИНТЕРФЕЙСА (С ЦЕНАМИ) ========================
+// ======================== ЛОКАЛИЗАЦИЯ ИНТЕРФЕЙСА ========================
 const translations = {
     ru: {
         tagline: '«Не волшебная таблетка, но близко»',
@@ -169,8 +171,7 @@ const translations = {
         key1Price: 'Бесплатно',
         key2Price: '890 ₽ / $12',
         key3Price: '1390 ₽ / $19',
-        key4Price: '1890 ₽ / $25',
-        allPrice: '2990 ₽ / $40'
+        key4Price: '1890 ₽ / $25'
     },
     en: {
         tagline: '"Not a magic pill, but close"',
@@ -188,15 +189,14 @@ const translations = {
         key1Price: 'Free',
         key2Price: '890 ₽ / $12',
         key3Price: '1390 ₽ / $19',
-        key4Price: '1890 ₽ / $25',
-        allPrice: '2990 ₽ / $40'
+        key4Price: '1890 ₽ / $25'
     }
 };
 
 function updateUILanguage() {
     const t = translations[currentLang];
     document.getElementById('tagline').innerText = t.tagline;
-    document.getElementById('buyAllBtn').innerHTML = `🎁 ${t.buyAll}`;
+    document.getElementById('buyAllBtn').innerText = t.buyAll;
     document.getElementById('key1Name').innerText = t.key1Name;
     document.getElementById('key2Name').innerText = t.key2Name;
     document.getElementById('key3Name').innerText = t.key3Name;
@@ -214,7 +214,7 @@ function setLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('app_lang', lang);
     updateUILanguage();
-    loadUserStatus();
+    loadUserStatus(); // обновим статусы (переведутся надписи)
 }
 
 document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -225,6 +225,10 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.add('active');
     });
 });
+
+// ======================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ========================
+function stopActiveAudio() { if(activeAudio) { activeAudio.pause(); activeAudio=null; } }
+function formatTime(sec) { if(isNaN(sec)) return "0:00"; const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
 
 // ======================== ЛОКАЛЬНЫЙ КЛЮЧ 1 (ДВЕ ВЕРСИИ) ========================
 const freeSteps_ru = [
@@ -248,9 +252,6 @@ const freeSteps_en = [
 function getFreeSteps() { return currentLang === 'ru' ? freeSteps_ru : freeSteps_en; }
 
 let freeStepIndex = 0, freeHistory = [], freeAudio = null;
-
-function stopActiveAudio() { if(activeAudio) { activeAudio.pause(); activeAudio=null; } if(freeAudio) { freeAudio.pause(); freeAudio=null; } }
-function formatTime(sec) { if(isNaN(sec)) return "0:00"; const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
 
 function renderFreeStep() {
     const steps = getFreeSteps();
@@ -314,7 +315,7 @@ function renderFreeStep() {
 
 function startFreeKey() { freeStepIndex=0; freeHistory=[]; renderFreeStep(); }
 
-// ======================== ПЛАТНЫЕ КЛЮЧИ ========================
+// ======================== ПЛАТНЫЕ КЛЮЧИ (2,3,4) ========================
 async function loadUserStatus() {
     const webApp = window.Telegram?.WebApp;
     if(!webApp?.initData) return;
@@ -342,7 +343,6 @@ async function loadKeyContent(keyId){
     if(!webApp?.initData) return null;
     const resp = await fetch(`${WORKER_URL}/get-content?initData=${encodeURIComponent(webApp.initData)}&key=${keyId}&lang=${currentLang}`);
     if(resp.ok) return await resp.json();
-    console.warn('loadKeyContent failed', resp.status);
     return null;
 }
 
