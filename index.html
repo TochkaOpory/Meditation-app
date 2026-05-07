@@ -8,7 +8,6 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Дополнительный стиль для переключателя языка */
         .lang-switcher {
             position: fixed;
             top: 16px;
@@ -40,6 +39,17 @@
         .lang-btn:hover {
             background: rgba(212,175,55,0.3);
         }
+        .price-small {
+            font-size: 11px;
+            margin-top: 4px;
+            color: #D4AF37;
+            opacity: 0.9;
+        }
+        .btn-price {
+            font-size: 12px;
+            margin-left: 6px;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -47,7 +57,6 @@
     <div class="app-wrapper">
         <div class="app-container" id="mainAppContainer">
             <div id="homeScreen">
-                <!-- Переключатель языка -->
                 <div class="lang-switcher">
                     <button class="lang-btn" data-lang="ru">🇷🇺 RU</button>
                     <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
@@ -56,26 +65,30 @@
                     <div class="brand">Точка опоры</div>
                     <div class="tagline" id="tagline">«Не волшебная таблетка, но близко»</div>
                 </div>
-                <button id="buyAllBtn" class="btn-buy-all">🎁 Купить все ключи (2+3+4) — 2990 ₽</button>
+                <button id="buyAllBtn" class="btn-buy-all">🎁 Купить все ключи (2+3+4) — <span id="allPriceRub">2990 ₽</span> / <span id="allPriceUsd">$40</span></button>
                 <div class="grid-2x2">
                     <div class="key-card" data-key="key1">
                         <div class="key-number">КЛЮЧ 1</div>
                         <div class="key-name" id="key1Name">5 врат</div>
+                        <div class="price-small" id="key1Price">Бесплатно</div>
                         <div class="status-badge status-open">✓ открыт доступ</div>
                     </div>
                     <div class="key-card" data-key="key2">
                         <div class="key-number">КЛЮЧ 2</div>
                         <div class="key-name" id="key2Name">Золотое сияние</div>
+                        <div class="price-small" id="key2Price">890 ₽ / $12</div>
                         <div class="status-badge" id="key2Status">🔒 закрыт доступ</div>
                     </div>
                     <div class="key-card" data-key="key3">
                         <div class="key-number">КЛЮЧ 3</div>
                         <div class="key-name" id="key3Name">Искусство быть</div>
+                        <div class="price-small" id="key3Price">1390 ₽ / $19</div>
                         <div class="status-badge" id="key3Status">🔒 закрыт доступ</div>
                     </div>
                     <div class="key-card" data-key="key4">
                         <div class="key-number">КЛЮЧ 4</div>
                         <div class="key-name" id="key4Name">Субстрат жизненности</div>
+                        <div class="price-small" id="key4Price">1890 ₽ / $25</div>
                         <div class="status-badge" id="key4Status">🔒 закрыт доступ</div>
                     </div>
                 </div>
