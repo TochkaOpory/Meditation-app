@@ -1,10 +1,140 @@
-// ======================== 3D FON ========================
+// ======================== 3D ФОН (оригинальный) ========================
 (function initCosmicBackground() {
-    // ... (скопируйте сюда всю функцию initCosmicBackground из вашего последнего HTML) ...
-    // Она занимает много места, но вы её уже имеете.
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x02010a, 0.05);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1, 7);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+    
+    const universeGroup = new THREE.Group();
+    const entityGroup = new THREE.Group();
+    const bodyGroup = new THREE.Group();
+    scene.add(universeGroup);
+    scene.add(entityGroup);
+    entityGroup.add(bodyGroup);
+    
+    // Stars
+    const starGeo = new THREE.BufferGeometry();
+    const starCount = 3000;
+    const starPos = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+    const colorPalette = [0xffffff, 0xffd700, 0x88ccff, 0xffb288];
+    for(let i=0; i<starCount; i++) {
+        const r = 10 + Math.random() * 40;
+        const theta = 2 * Math.PI * Math.random();
+        const phi = Math.acos(2 * Math.random() - 1);
+        starPos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+        starPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+        starPos[i*3+2] = r * Math.cos(phi);
+        const col = new THREE.Color(colorPalette[Math.floor(Math.random() * colorPalette.length)]);
+        starColors[i*3] = col.r;
+        starColors[i*3+1] = col.g;
+        starColors[i*3+2] = col.b;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ size: 0.05, vertexColors: true, transparent: true, opacity: 0.8 }));
+    universeGroup.add(stars);
+    
+    // body particles
+    const bodyPoints = [];
+    function addVolumePoints(radius, height, count, offset, isSphere=true) {
+        for(let i=0;i<count;i++) {
+            let x,y,z;
+            if(isSphere){
+                const u=Math.random(), v=Math.random();
+                const theta=u*2*Math.PI, phi=Math.acos(2*v-1);
+                const r=Math.cbrt(Math.random())*radius;
+                x=r*Math.sin(phi)*Math.cos(theta);
+                y=r*Math.sin(phi)*Math.sin(theta);
+                z=r*Math.cos(phi);
+            } else {
+                const theta=Math.random()*2*Math.PI;
+                const r=Math.sqrt(Math.random())*radius;
+                x=r*Math.cos(theta);
+                z=r*Math.sin(theta);
+                y=(Math.random()-0.5)*height;
+            }
+            bodyPoints.push(x+offset.x, y+offset.y, z+offset.z);
+        }
+    }
+    addVolumePoints(0.25,0,800,{x:0,y:1.3,z:0});
+    addVolumePoints(0.35,1.2,1500,{x:0,y:0.5,z:0},false);
+    addVolumePoints(0.5,0.2,1000,{x:0,y:-0.1,z:0.1},false);
+    addVolumePoints(0.12,0.8,400,{x:-0.45,y:0.5,z:0},false);
+    addVolumePoints(0.12,0.8,400,{x:0.45,y:0.5,z:0},false);
+    const bodyGeo = new THREE.BufferGeometry();
+    bodyGeo.setAttribute('position', new THREE.Float32BufferAttribute(bodyPoints, 3));
+    const particleBody = new THREE.Points(bodyGeo, new THREE.PointsMaterial({ color: 0xffd700, size: 0.02, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false }));
+    bodyGroup.add(particleBody);
+    
+    function createCenter(color, yPos, size){
+        const mesh=new THREE.Mesh(new THREE.SphereGeometry(size,16,16), new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending}));
+        mesh.position.y=yPos;
+        const glow=new THREE.Mesh(new THREE.SphereGeometry(size*2.5,16,16), new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.2, blending:THREE.AdditiveBlending, depthWrite:false}));
+        mesh.add(glow);
+        mesh.add(new THREE.PointLight(color,1,2));
+        return mesh;
+    }
+    bodyGroup.add(createCenter(0xff7700,0.1,0.08), createCenter(0xffb288,0.7,0.08), createCenter(0xffffff,1.35,0.05));
+    
+    const idealSphere=new THREE.Mesh(new THREE.SphereGeometry(0.15,32,32), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending}));
+    idealSphere.position.y=2.2;
+    const idealGlow=new THREE.Mesh(new THREE.SphereGeometry(0.6,32,32), new THREE.MeshBasicMaterial({color:0xfff0aa, transparent:true, opacity:0.3, blending:THREE.AdditiveBlending}));
+    idealSphere.add(idealGlow);
+    idealSphere.add(new THREE.PointLight(0xffffff,2,5));
+    entityGroup.add(idealSphere);
+    
+    const core=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,8,8), new THREE.MeshBasicMaterial({color:0xffeaa0, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending}));
+    core.position.y=-1;
+    entityGroup.add(core);
+    const crystal=new THREE.Mesh(new THREE.ConeGeometry(0.3,1,6), new THREE.MeshBasicMaterial({color:0x88ccff, transparent:true, opacity:0.7, blending:THREE.AdditiveBlending, wireframe:true}));
+    crystal.position.y=-3;
+    crystal.rotation.x=Math.PI;
+    entityGroup.add(crystal);
+    const cocoon=new THREE.Mesh(new THREE.SphereGeometry(1.4,24,24), new THREE.MeshBasicMaterial({color:0xffd700, wireframe:true, transparent:true, opacity:0.05, blending:THREE.AdditiveBlending}));
+    cocoon.scale.set(1,1.4,1);
+    cocoon.position.y=0.6;
+    entityGroup.add(cocoon);
+    
+    const cascadeCount=100;
+    const cascadeGeo=new THREE.BufferGeometry();
+    const cascadePos=new Float32Array(cascadeCount*3);
+    for(let i=0;i<cascadeCount;i++){ cascadePos[i*3]=(Math.random()-0.5)*0.1; cascadePos[i*3+1]=2.2-Math.random()*5.2; cascadePos[i*3+2]=(Math.random()-0.5)*0.1; }
+    cascadeGeo.setAttribute('position', new THREE.BufferAttribute(cascadePos,3));
+    const cascade=new THREE.Points(cascadeGeo, new THREE.PointsMaterial({color:0xffffff, size:0.03, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending}));
+    entityGroup.add(cascade);
+    
+    let timeAnim=0;
+    function animateBackground(){
+        requestAnimationFrame(animateBackground);
+        timeAnim+=0.016;
+        const breath=Math.sin(timeAnim*1.5);
+        bodyGroup.scale.set(1+breath*0.015,1+breath*0.015,1+breath*0.015);
+        cocoon.material.opacity=0.05+(Math.sin(timeAnim*2)+1)*0.03;
+        cocoon.rotation.y+=0.002;
+        const pulse=(Math.sin(timeAnim*3)+1)*0.5;
+        idealGlow.scale.set(1+pulse*0.2,1+pulse*0.2,1+pulse*0.2);
+        crystal.rotation.y+=0.01;
+        universeGroup.rotation.y-=0.0005;
+        universeGroup.rotation.x=Math.sin(timeAnim*0.05)*0.1;
+        const positions=cascade.geometry.attributes.position.array;
+        for(let i=1;i<positions.length;i+=3){ positions[i]-=0.025; if(positions[i]<-3) positions[i]=2.2; }
+        cascade.geometry.attributes.position.needsUpdate=true;
+        camera.position.x=Math.sin(timeAnim*0.1)*6;
+        camera.position.z=Math.cos(timeAnim*0.1)*6;
+        camera.position.y=1+Math.sin(timeAnim*0.2)*1.5;
+        camera.lookAt(0,0.8,0);
+        renderer.render(scene,camera);
+    }
+    animateBackground();
+    window.addEventListener('resize',()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
 })();
 
-// ======================== КОНФИГ ========================
+// ======================== ОСНОВНАЯ ЛОГИКА ========================
 const WORKER_URL = 'https://checker.mirhaet83.workers.dev';
 const TRIBUTE_LINKS = {
     key2: 'https://t.me/tribute/app?startapp=pub9',
@@ -15,18 +145,16 @@ const TRIBUTE_LINKS = {
 };
 const AUDIO_URLS = { bonus: "https://files.catbox.moe/mhz6kz.mp3" };
 
-// Состояния
 let userStatus = { key2: false, key3: false, key4: false };
 let completed = { key2: false, key3: false };
 let welcomeShown = { key2: false, key3: false, key4: false };
 let currentContent = null, currentStepIndex = 0, stepHistory = [];
 let activeAudio = null;
 
-// ======================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ========================
 function stopActiveAudio() { if(activeAudio) { activeAudio.pause(); activeAudio=null; } }
-function formatTime(sec) { if(isNaN(sec)) return "0:00"; const m=Math.floor(sec/60), s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
+function formatTime(sec) { if(isNaN(sec)) return "0:00"; const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
 
-// ======================== БЕСПЛАТНЫЙ КЛЮЧ 1 (ЛОКАЛЬНО, БЕЗ WORKER) ========================
+// ======================== ЛОКАЛЬНЫЙ КЛЮЧ 1 ========================
 const freeSteps = [
     {
         type: "welcome",
@@ -65,6 +193,9 @@ const freeSteps = [
         description: "Хотите остальные 3 ключа (медитации 2,3,4) по быту, душе и социуму?\n\n✨ Начните с ключа 2 «Золотое сияние» – практика для баланса в повседневности.\n\n💰 Стоимость ключа 2: 890 ₽"
     }
 ];
+
+let freeStepIndex = 0, freeHistory = [], freeAudio = null;
+
 function renderFreeStep() {
     if(freeStepIndex >= freeSteps.length) { goHome(); return; }
     const step = freeSteps[freeStepIndex];
@@ -74,11 +205,16 @@ function renderFreeStep() {
     const cardDiv = document.createElement('div'); cardDiv.className = 'meditation-card';
     let innerHtml = '';
     if(step.type === 'welcome') {
-        innerHtml = `<div class="med-title">📘 Информация</div><div class="med-sub">${step.content.replace(/\n/g,'<br>')}</div><button id="stepNextBtn" class="btn-audio">Далее</button>`;
+        innerHtml = `<div class="med-title">📘 Информация</div><div class="med-sub">${step.content.replace(/\n/g,'<br>')}</div><button id="stepNextBtn" class="btn-audio">${step.btnText}</button>`;
     } else if(step.type === 'audio') {
         innerHtml = `<div class="med-title">${step.title}</div><div class="med-sub">${step.text}</div><div id="playerContainer"></div><button id="stepNextBtn" class="btn-audio">${step.btnText}</button>`;
     } else if(step.type === 'bonus_podcast') {
         innerHtml = `<div class="med-title">🎁 Бонус</div><div class="med-sub">${step.content}</div><button id="bonusPodcastBtn" class="btn-audio btn-secondary">${step.btnText}</button><button id="stepNextBtn" class="btn-audio" style="margin-top:20px;">Завершить</button>`;
+    } else if(step.type === 'next_key_prompt') {
+        const nextKey = step.nextKey, purchased = userStatus[nextKey];
+        if(purchased) innerHtml = `<div class="med-title">🔓 Переход к следующему ключу</div><div class="med-sub">${step.description}</div><button id="nextKeyBtn" class="btn-audio">Перейти к ключу 2</button>`;
+        else innerHtml = `<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${step.description}</div><button id="buyNextKeyBtn" class="btn-audio">💳 Купить ключ 2 (890 ₽)</button>`;
+        innerHtml += `<button id="homeAfterKeyBtn" class="back-home">← На главную</button>`;
     }
     innerHtml += `<div style="display:flex; justify-content:space-between; margin-top:20px;"><button id="stepBackBtn" class="back-home">← Назад</button><button id="stepStartBtn" class="back-to-start">🏁 В начало</button><button id="stepHomeBtn" class="back-home">🏠 На главную</button></div>`;
     cardDiv.innerHTML = innerHtml;
@@ -105,18 +241,23 @@ function renderFreeStep() {
             freeAudio = audio; activeAudio = audio;
         }
     }
-    document.getElementById('stepNextBtn')?.addEventListener('click',()=>{ stopActiveAudio(); if(step.type === 'bonus_podcast'){ goHome(); } else { freeHistory.push(freeStepIndex); freeStepIndex++; renderFreeStep(); } });
-    document.getElementById('stepBackBtn')?.addEventListener('click',()=>{ stopActiveAudio(); if(freeHistory.length) freeStepIndex=freeHistory.pop(); else if(freeStepIndex>0) freeStepIndex--; renderFreeStep(); });
+    document.getElementById('stepNextBtn')?.addEventListener('click',()=>{ stopActiveAudio(); if(step.type === 'bonus_podcast'){ freeStepIndex++; renderFreeStep(); } else if(step.type === 'next_key_prompt'){ if(userStatus[step.nextKey]) openKeyContent(step.nextKey); else openTributePayment(TRIBUTE_LINKS[step.nextKey]); } else { freeHistory.push(freeStepIndex); freeStepIndex++; renderFreeStep(); } });
+    document.getElementById('stepBackBtn')?.addEventListener('click',()=>{ stopActiveAudio(); if(step.type === 'next_key_prompt'){ goHome(); } else { if(freeHistory.length) freeStepIndex=freeHistory.pop(); else if(freeStepIndex>0) freeStepIndex--; renderFreeStep(); } });
     document.getElementById('stepStartBtn')?.addEventListener('click',()=>{ stopActiveAudio(); freeStepIndex=0; freeHistory=[]; renderFreeStep(); });
     document.getElementById('stepHomeBtn')?.addEventListener('click',()=>goHome());
     if(step.type === 'bonus_podcast') {
         document.getElementById('bonusPodcastBtn')?.addEventListener('click', (e) => { e.preventDefault(); showBonusPodcast(); });
     }
+    if(step.type === 'next_key_prompt') {
+        if(userStatus[step.nextKey]) document.getElementById('nextKeyBtn')?.addEventListener('click',()=>openKeyContent(step.nextKey));
+        else document.getElementById('buyNextKeyBtn')?.addEventListener('click',()=>openTributePayment(TRIBUTE_LINKS[step.nextKey]));
+        document.getElementById('homeAfterKeyBtn')?.addEventListener('click',()=>goHome());
+    }
 }
 
 function startFreeKey() { freeStepIndex=0; freeHistory=[]; renderFreeStep(); }
 
-// ======================== ОСТАЛЬНЫЕ ФУНКЦИИ (для платных ключей) ========================
+// ======================== ПЛАТНЫЕ КЛЮЧИ (2,3,4) ========================
 async function loadUserStatus() {
     const webApp = window.Telegram?.WebApp;
     if(!webApp?.initData) return;
@@ -172,11 +313,73 @@ function showBonusPodcast() {
     document.getElementById('closeBonusBtn').addEventListener('click',()=>{ stopActiveAudio(); goHome(); });
 }
 
-function renderStepWithFullscreen(step, nextCallback, backCallback, homeCallback, startCallback){
-    // ... (та же функция, что была в вашем коде) ...
-    // Она уже у вас есть, скопируйте её из последнего рабочего HTML.
-    // Чтобы не раздувать ответ, я предполагаю, что вы её вставите.
-    // Если нужна полная – напишите, я добавлю.
+function renderStepWithFullscreen(step, nextCallback, backCallback, homeCallback, startCallback) {
+    const isAudioStep = (step.type==='audio' || step.type==='audio_with_text' || step.type==='audio_with_image');
+    const wrapperDiv = document.createElement('div');
+    if(isAudioStep) { wrapperDiv.className = 'fullscreen-audio-card'; wrapperDiv.style.animation = 'fadeInUp 0.4s ease'; }
+    const cardDiv = document.createElement('div'); cardDiv.className = 'meditation-card';
+    let innerHtml = '';
+    if(step.type==='welcome' || step.type==='text') {
+        innerHtml = `<div class="med-title">📘 Информация</div><div class="med-sub">${(step.content||step.text||'').replace(/\n/g,'<br>')}</div><button id="stepNextBtn" class="btn-audio">Далее</button>`;
+    } else if(isAudioStep) {
+        innerHtml = `<div class="med-title">${step.title||'🎧 Аудио'}</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div>`;
+        if(step.type==='audio_with_image') innerHtml += `<div class="image-container"><img src="${step.image}" alt="illustration" loading="lazy"></div>`;
+        innerHtml += `<div id="playerContainer"></div><button id="stepNextBtn" class="btn-audio">${step.btnText||'Далее'}</button>`;
+    } else if(step.type==='images_with_text') {
+        innerHtml = `<div class="med-title">🖼️ Картинки</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div><button id="showImagesBtn" class="btn-audio btn-secondary">${step.btnText||'Показать картинки'}</button><div id="hiddenImages" style="display:none;">${step.images.map(src=>`<div class="image-container"><img src="${src}" loading="lazy"></div>`).join('')}</div><button id="stepNextBtn" class="btn-audio" style="margin-top:20px;">Далее →</button>`;
+    } else if(step.type==='quiz') {
+        innerHtml = `<div class="med-title">📝 Осмысление</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div>${step.questions.map((q,i)=>`<div class="quiz-question">${i+1}. ${q}</div>`).join('')}<button id="stepNextBtn" class="btn-audio">${step.btnText||'Далее'}</button>`;
+    } else if(step.type==='next_key_prompt') {
+        const nextKey = step.nextKey, purchased = userStatus[nextKey];
+        if(purchased) innerHtml = `<div class="med-title">🔓 Переход к следующему ключу</div><div class="med-sub">${step.description||'Вы прошли этот ключ!'}</div><button id="nextKeyBtn" class="btn-audio">Перейти к следующему ключу</button>`;
+        else innerHtml = `<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${step.description||`Откройте ${nextKey==='key3'?'КЛЮЧ 3':'КЛЮЧ 4'}`}</div><button id="buyNextKeyBtn" class="btn-audio">💳 Купить</button>`;
+        innerHtml += `<button id="homeAfterKeyBtn" class="back-home">← На главную</button>`;
+    } else if(step.type==='bonus_pdf') {
+        innerHtml = `<div class="med-title">📘 Бонусный материал</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div><a href="${step.pdf}" target="_blank" class="btn-audio" style="display:inline-block;">${step.btnText}</a><button id="stepNextBtn" class="btn-audio">Далее</button>`;
+    } else if(step.type==='final_bonus') {
+        innerHtml = `<div class="med-title">🎁 Завершение</div><div class="med-sub">${(step.content||'').replace(/\n/g,'<br>')}</div><button id="stepNextBtn" class="btn-audio">${step.btnText||'Завершить'}</button>`;
+    } else if(step.type === 'bonus_podcast') {
+        innerHtml = `<div class="med-title">🎁 Бонус</div><div class="med-sub">${step.content}</div><button id="bonusPodcastBtn" class="btn-audio btn-secondary">${step.btnText}</button><button id="stepNextBtn" class="btn-audio" style="margin-top:20px;">Завершить</button>`;
+    }
+    innerHtml += `<div style="display:flex; justify-content:space-between; margin-top:20px;"><button id="stepBackBtn" class="back-home">← Назад</button><button id="stepStartBtn" class="back-to-start">🏁 В начало</button><button id="stepHomeBtn" class="back-home">🏠 На главную</button></div>`;
+    cardDiv.innerHTML = innerHtml;
+    wrapperDiv.appendChild(cardDiv);
+    const panel = document.getElementById('dynamicPanel'); panel.innerHTML = ''; panel.appendChild(wrapperDiv);
+    if(isAudioStep && step.audio) {
+        const container = document.getElementById('playerContainer');
+        if(container) {
+            const audio = new Audio(step.audio);
+            audio.preload = 'metadata';
+            const playerDiv = document.createElement('div'); playerDiv.className = 'custom-player';
+            playerDiv.innerHTML = `<div class="player-controls"><button class="play-btn">▶</button><span class="time">0:00 / 0:00</span><input type="range" class="seek-bar" value="0" step="0.01"><select class="speed-select"><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option></select></div>`;
+            container.appendChild(playerDiv);
+            const playBtn=playerDiv.querySelector('.play-btn'), timeSpan=playerDiv.querySelector('.time'), seekBar=playerDiv.querySelector('.seek-bar'), speedSelect=playerDiv.querySelector('.speed-select');
+            let playing=false;
+            audio.addEventListener('loadedmetadata',()=>{ if(isFinite(audio.duration)){ seekBar.max=audio.duration; timeSpan.innerText=`0:00 / ${formatTime(audio.duration)}`; } });
+            audio.addEventListener('timeupdate',()=>{ if(!isNaN(audio.duration)){ seekBar.value=audio.currentTime; timeSpan.innerText=`${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`; } });
+            audio.addEventListener('ended',()=>{ playing=false; playBtn.innerText='▶'; });
+            playBtn.addEventListener('click',()=>{ if(playing){ audio.pause(); playBtn.innerText='▶'; playing=false; } else { audio.play().catch(e=>{}); playBtn.innerText='⏸'; playing=true; } });
+            seekBar.addEventListener('input',()=>{ audio.currentTime=parseFloat(seekBar.value); });
+            speedSelect.addEventListener('change',()=>{ audio.playbackRate=parseFloat(speedSelect.value); });
+            activeAudio = audio;
+        }
+    }
+    document.getElementById('stepNextBtn')?.addEventListener('click',()=>{ stopActiveAudio(); nextCallback(); });
+    document.getElementById('stepBackBtn')?.addEventListener('click',()=>{ stopActiveAudio(); backCallback(); });
+    document.getElementById('stepStartBtn')?.addEventListener('click',()=>{ stopActiveAudio(); startCallback(); });
+    document.getElementById('stepHomeBtn')?.addEventListener('click',()=>{ stopActiveAudio(); homeCallback(); });
+    if(step.type==='next_key_prompt'){
+        if(userStatus[step.nextKey]) document.getElementById('nextKeyBtn')?.addEventListener('click',()=>openKeyContent(step.nextKey));
+        else document.getElementById('buyNextKeyBtn')?.addEventListener('click',()=>openTributePayment(TRIBUTE_LINKS[step.nextKey]));
+        document.getElementById('homeAfterKeyBtn')?.addEventListener('click',()=>goHome());
+    }
+    if(step.type==='images_with_text'){
+        const showBtn=document.getElementById('showImagesBtn'), hiddenDiv=document.getElementById('hiddenImages');
+        showBtn?.addEventListener('click',()=>{ if(hiddenDiv.style.display==='none'){ hiddenDiv.style.display='block'; showBtn.textContent='Скрыть картинки'; } else { hiddenDiv.style.display='none'; showBtn.textContent=step.btnText||'Показать картинки'; } });
+    }
+    if(step.type === 'bonus_podcast') {
+        document.getElementById('bonusPodcastBtn')?.addEventListener('click', (e) => { e.preventDefault(); showBonusPodcast(); });
+    }
 }
 
 async function openKeyContent(keyId){
@@ -200,12 +403,11 @@ function renderCurrentStep(){
         goHome(); return;
     }
     const step=currentContent.steps[currentStepIndex];
-    renderStepWithFullscreen(step,
+    renderStepWithFullscreen(step, 
         ()=>{ if(currentStepIndex===0 && currentContent.steps[0]?.type==='welcome') welcomeShown[currentContent.key_id]=true; stepHistory.push(currentStepIndex); currentStepIndex++; renderCurrentStep(); },
         ()=>{ if(stepHistory.length) currentStepIndex=stepHistory.pop(); else if(currentStepIndex>0) currentStepIndex--; renderCurrentStep(); },
-        ()=>{ goHome(); },
-        ()=>{ currentStepIndex=0; stepHistory=[]; renderCurrentStep(); }
-    );
+        ()=>{ goHome(); }, 
+        ()=>{ currentStepIndex=0; stepHistory=[]; renderCurrentStep(); });
 }
 
 function goHome(){ stopActiveAudio(); document.getElementById('dynamicPanel').classList.add('hidden'); document.getElementById('homeScreen').classList.remove('hidden'); currentContent=null; loadUserStatus(); }
