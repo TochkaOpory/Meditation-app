@@ -1,6 +1,135 @@
-// ======================== 3D ФОН (оригинальный) ========================
+// ======================== 3D ФОН ========================
 (function initCosmicBackground() {
-    // ... (полностью скопируйте эту функцию из вашего текущего app.js, она не меняется) ...
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x02010a, 0.05);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1, 7);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+    
+    const universeGroup = new THREE.Group();
+    const entityGroup = new THREE.Group();
+    const bodyGroup = new THREE.Group();
+    scene.add(universeGroup);
+    scene.add(entityGroup);
+    entityGroup.add(bodyGroup);
+    
+    const starGeo = new THREE.BufferGeometry();
+    const starCount = 3000;
+    const starPos = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+    const colorPalette = [0xffffff, 0xffd700, 0x88ccff, 0xffb288];
+    for(let i=0; i<starCount; i++) {
+        const r = 10 + Math.random() * 40;
+        const theta = 2 * Math.PI * Math.random();
+        const phi = Math.acos(2 * Math.random() - 1);
+        starPos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+        starPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+        starPos[i*3+2] = r * Math.cos(phi);
+        const col = new THREE.Color(colorPalette[Math.floor(Math.random() * colorPalette.length)]);
+        starColors[i*3] = col.r;
+        starColors[i*3+1] = col.g;
+        starColors[i*3+2] = col.b;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ size: 0.05, vertexColors: true, transparent: true, opacity: 0.8 }));
+    universeGroup.add(stars);
+    
+    const bodyPoints = [];
+    function addVolumePoints(radius, height, count, offset, isSphere=true) {
+        for(let i=0;i<count;i++) {
+            let x,y,z;
+            if(isSphere){
+                const u=Math.random(), v=Math.random();
+                const theta=u*2*Math.PI, phi=Math.acos(2*v-1);
+                const r=Math.cbrt(Math.random())*radius;
+                x=r*Math.sin(phi)*Math.cos(theta);
+                y=r*Math.sin(phi)*Math.sin(theta);
+                z=r*Math.cos(phi);
+            } else {
+                const theta=Math.random()*2*Math.PI;
+                const r=Math.sqrt(Math.random())*radius;
+                x=r*Math.cos(theta);
+                z=r*Math.sin(theta);
+                y=(Math.random()-0.5)*height;
+            }
+            bodyPoints.push(x+offset.x, y+offset.y, z+offset.z);
+        }
+    }
+    addVolumePoints(0.25,0,800,{x:0,y:1.3,z:0});
+    addVolumePoints(0.35,1.2,1500,{x:0,y:0.5,z:0},false);
+    addVolumePoints(0.5,0.2,1000,{x:0,y:-0.1,z:0.1},false);
+    addVolumePoints(0.12,0.8,400,{x:-0.45,y:0.5,z:0},false);
+    addVolumePoints(0.12,0.8,400,{x:0.45,y:0.5,z:0},false);
+    const bodyGeo = new THREE.BufferGeometry();
+    bodyGeo.setAttribute('position', new THREE.Float32BufferAttribute(bodyPoints, 3));
+    const particleBody = new THREE.Points(bodyGeo, new THREE.PointsMaterial({ color: 0xffd700, size: 0.02, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false }));
+    bodyGroup.add(particleBody);
+    
+    function createCenter(color, yPos, size){
+        const mesh=new THREE.Mesh(new THREE.SphereGeometry(size,16,16), new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending}));
+        mesh.position.y=yPos;
+        const glow=new THREE.Mesh(new THREE.SphereGeometry(size*2.5,16,16), new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.2, blending:THREE.AdditiveBlending, depthWrite:false}));
+        mesh.add(glow);
+        mesh.add(new THREE.PointLight(color,1,2));
+        return mesh;
+    }
+    bodyGroup.add(createCenter(0xff7700,0.1,0.08), createCenter(0xffb288,0.7,0.08), createCenter(0xffffff,1.35,0.05));
+    
+    const idealSphere=new THREE.Mesh(new THREE.SphereGeometry(0.15,32,32), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending}));
+    idealSphere.position.y=2.2;
+    const idealGlow=new THREE.Mesh(new THREE.SphereGeometry(0.6,32,32), new THREE.MeshBasicMaterial({color:0xfff0aa, transparent:true, opacity:0.3, blending:THREE.AdditiveBlending}));
+    idealSphere.add(idealGlow);
+    idealSphere.add(new THREE.PointLight(0xffffff,2,5));
+    entityGroup.add(idealSphere);
+    
+    const core=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,8,8), new THREE.MeshBasicMaterial({color:0xffeaa0, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending}));
+    core.position.y=-1;
+    entityGroup.add(core);
+    const crystal=new THREE.Mesh(new THREE.ConeGeometry(0.3,1,6), new THREE.MeshBasicMaterial({color:0x88ccff, transparent:true, opacity:0.7, blending:THREE.AdditiveBlending, wireframe:true}));
+    crystal.position.y=-3;
+    crystal.rotation.x=Math.PI;
+    entityGroup.add(crystal);
+    const cocoon=new THREE.Mesh(new THREE.SphereGeometry(1.4,24,24), new THREE.MeshBasicMaterial({color:0xffd700, wireframe:true, transparent:true, opacity:0.05, blending:THREE.AdditiveBlending}));
+    cocoon.scale.set(1,1.4,1);
+    cocoon.position.y=0.6;
+    entityGroup.add(cocoon);
+    
+    const cascadeCount=100;
+    const cascadeGeo=new THREE.BufferGeometry();
+    const cascadePos=new Float32Array(cascadeCount*3);
+    for(let i=0;i<cascadeCount;i++){ cascadePos[i*3]=(Math.random()-0.5)*0.1; cascadePos[i*3+1]=2.2-Math.random()*5.2; cascadePos[i*3+2]=(Math.random()-0.5)*0.1; }
+    cascadeGeo.setAttribute('position', new THREE.BufferAttribute(cascadePos,3));
+    const cascade=new THREE.Points(cascadeGeo, new THREE.PointsMaterial({color:0xffffff, size:0.03, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending}));
+    entityGroup.add(cascade);
+    
+    let timeAnim=0;
+    function animateBackground(){
+        requestAnimationFrame(animateBackground);
+        timeAnim+=0.016;
+        const breath=Math.sin(timeAnim*1.5);
+        bodyGroup.scale.set(1+breath*0.015,1+breath*0.015,1+breath*0.015);
+        cocoon.material.opacity=0.05+(Math.sin(timeAnim*2)+1)*0.03;
+        cocoon.rotation.y+=0.002;
+        const pulse=(Math.sin(timeAnim*3)+1)*0.5;
+        idealGlow.scale.set(1+pulse*0.2,1+pulse*0.2,1+pulse*0.2);
+        crystal.rotation.y+=0.01;
+        universeGroup.rotation.y-=0.0005;
+        universeGroup.rotation.x=Math.sin(timeAnim*0.05)*0.1;
+        const positions=cascade.geometry.attributes.position.array;
+        for(let i=1;i<positions.length;i+=3){ positions[i]-=0.025; if(positions[i]<-3) positions[i]=2.2; }
+        cascade.geometry.attributes.position.needsUpdate=true;
+        camera.position.x=Math.sin(timeAnim*0.1)*6;
+        camera.position.z=Math.cos(timeAnim*0.1)*6;
+        camera.position.y=1+Math.sin(timeAnim*0.2)*1.5;
+        camera.lookAt(0,0.8,0);
+        renderer.render(scene,camera);
+    }
+    animateBackground();
+    window.addEventListener('resize',()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
 })();
 
 // ======================== ОСНОВНАЯ ЛОГИКА ========================
@@ -22,25 +151,30 @@ let activeAudio = null;
 
 let currentLang = localStorage.getItem('app_lang') || 'ru';
 
-// ======================== ЛОКАЛИЗАЦИЯ ИНТЕРФЕЙСА ========================
+// ======================== ЛОКАЛИЗАЦИЯ ========================
 const translations = {
     ru: {
         tagline: '«Не волшебная таблетка, но близко»',
-        buyAll: '🎁 Купить все ключи (2+3+4) — 2990 ₽ / $40',
+        buyAllPrefix: 'Купить все ключи (2+3+4)',
+        allPrice: '2990 ₽',
+        key1Title: 'КЛЮЧ 1',
+        key2Title: 'КЛЮЧ 2',
+        key3Title: 'КЛЮЧ 3',
+        key4Title: 'КЛЮЧ 4',
         key1Name: '5 врат',
         key2Name: 'Золотое сияние',
         key3Name: 'Искусство быть',
         key4Name: 'Субстрат жизненности',
+        key1Price: 'Бесплатно',
+        key2Price: '890 ₽',
+        key3Price: '1390 ₽',
+        key4Price: '1890 ₽',
         donate: '👋 Передать привет автору',
         note: 'нажмите на ключ, чтобы начать практику',
         accessOpen: '✓ открыт доступ',
         accessClosed: '🔒 закрыт доступ',
         firstComplete: '🔓 сначала пройдите КЛЮЧ 2',
         firstComplete2: '🔓 сначала пройдите КЛЮЧ 2 и КЛЮЧ 3',
-        key1Price: 'Бесплатно',
-        key2Price: '890 ₽ / $12',
-        key3Price: '1390 ₽ / $19',
-        key4Price: '1890 ₽ / $25',
         back: '← Назад',
         toStart: '🏁 В начало',
         toHome: '🏠 На главную',
@@ -52,25 +186,34 @@ const translations = {
         buy: '💳 Купить',
         goToKey: '🔓 Перейти к следующему ключу',
         bonusPodcastButton: '🎁 Получить бонус-подкаст',
-        complete: 'Завершить'
+        complete: 'Завершить',
+        key2PriceShort: '890 ₽',
+        key3PriceShort: '1390 ₽',
+        key4PriceShort: '1890 ₽',
+        allPriceShort: '2990 ₽'
     },
     en: {
         tagline: '"Not a magic pill, but close"',
-        buyAll: '🎁 Buy all keys (2+3+4) — 2990 ₽ / $40',
+        buyAllPrefix: 'Buy all keys (2+3+4)',
+        allPrice: '$40',
+        key1Title: 'KEY 1',
+        key2Title: 'KEY 2',
+        key3Title: 'KEY 3',
+        key4Title: 'KEY 4',
         key1Name: '5 Gates',
         key2Name: 'Golden Glow',
         key3Name: 'The Art of Being',
         key4Name: 'Substrate of Vitality',
+        key1Price: 'Free',
+        key2Price: '$12',
+        key3Price: '$19',
+        key4Price: '$25',
         donate: '👋 Say hi to author',
         note: 'tap on a key to start practice',
         accessOpen: '✓ access granted',
         accessClosed: '🔒 access closed',
         firstComplete: '🔓 complete KEY 2 first',
         firstComplete2: '🔓 complete KEY 2 and KEY 3 first',
-        key1Price: 'Free',
-        key2Price: '890 ₽ / $12',
-        key3Price: '1390 ₽ / $19',
-        key4Price: '1890 ₽ / $25',
         back: '← Back',
         toStart: '🏁 To start',
         toHome: '🏠 Home',
@@ -82,24 +225,33 @@ const translations = {
         buy: '💳 Buy',
         goToKey: '🔓 Go to next key',
         bonusPodcastButton: '🎁 Get bonus podcast',
-        complete: 'Complete'
+        complete: 'Complete',
+        key2PriceShort: '$12',
+        key3PriceShort: '$19',
+        key4PriceShort: '$25',
+        allPriceShort: '$40'
     }
 };
 
 function updateUILanguage() {
     const t = translations[currentLang];
     document.getElementById('tagline').innerText = t.tagline;
-    document.getElementById('buyAllBtn').innerText = t.buyAll;
+    document.getElementById('buyAllText').innerText = t.buyAllPrefix;
+    document.getElementById('allPriceSpan').innerText = t.allPrice;
+    document.getElementById('key1Title').innerText = t.key1Title;
+    document.getElementById('key2Title').innerText = t.key2Title;
+    document.getElementById('key3Title').innerText = t.key3Title;
+    document.getElementById('key4Title').innerText = t.key4Title;
     document.getElementById('key1Name').innerText = t.key1Name;
     document.getElementById('key2Name').innerText = t.key2Name;
     document.getElementById('key3Name').innerText = t.key3Name;
     document.getElementById('key4Name').innerText = t.key4Name;
-    document.getElementById('donateBtn').innerText = t.donate;
-    document.getElementById('note').innerText = t.note;
     document.getElementById('key1Price').innerText = t.key1Price;
     document.getElementById('key2Price').innerText = t.key2Price;
     document.getElementById('key3Price').innerText = t.key3Price;
     document.getElementById('key4Price').innerText = t.key4Price;
+    document.getElementById('donateBtn').innerText = t.donate;
+    document.getElementById('note').innerText = t.note;
     updateStatusUI();
 }
 
@@ -107,20 +259,18 @@ function setLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('app_lang', lang);
     updateUILanguage();
-    // Если открыт какой-то ключ (платный или free), перезагрузить его с новым языком
+    // Перезагрузить открытый контент при смене языка
     if (currentContent) {
-        // Если это платный ключ (key2-4), перезагружаем контент
         if (currentContent.key_id !== 'key1') {
             openKeyContent(currentContent.key_id);
         } else {
-            // Если ключ 1, перезапускаем его локально
             startFreeKey();
         }
     }
     loadUserStatus();
 }
 
-// Обработчики переключателя языка (должны быть добавлены после загрузки DOM)
+// Обработчики переключателя языка (будут назначены после загрузки DOM)
 document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const lang = btn.getAttribute('data-lang');
@@ -130,27 +280,27 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
     });
 });
 
-// ======================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ========================
+// ======================== ВСПОМОГАТЕЛЬНЫЕ ========================
 function stopActiveAudio() { if(activeAudio) { activeAudio.pause(); activeAudio=null; } }
 function formatTime(sec) { if(isNaN(sec)) return "0:00"; const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
 
-// ======================== ЛОКАЛЬНЫЙ КЛЮЧ 1 (ДВЕ ВЕРСИИ) ========================
+// ======================== ЛОКАЛЬНЫЙ КЛЮЧ 1 ========================
 const freeSteps_ru = [
-    { type: "welcome", content: "👋 Здравствуйте.\nМеня зовут Михаил. ... (ваш русский текст) ...", btnText: "ДА" },
-    { type: "audio", audio: "https://files.catbox.moe/qipf0o.mp3", title: "🎧 Шаг 1. Настройка (3 минуты)", text: "Слушайте перед медитацией...", btnText: "ДАЛЕЕ" },
-    { type: "audio", audio: "https://files.catbox.moe/udem2c.mp3", title: "🔑 Ключ 1 · 5 врат (10 минут)", text: "«Не волшебная таблетка...", btnText: "ДАЛЕЕ → интеграция" },
-    { type: "audio", audio: "https://files.catbox.moe/vmafp1.mp3", title: "🧩 Шаг 3 из 4. Интеграция (7 минут)", text: "Вы прошли медитацию...", btnText: "ДАЛЕЕ" },
-    { type: "bonus_podcast", content: "📝 Шаг 4 из 4. Три шага к почти волшебству...", btnText: "🎁 Получить бонус-подкаст" },
-    { type: "next_key_prompt", nextKey: "key2", description: "Хотите остальные 3 ключа...\n💰 Стоимость ключа 2: 890 ₽ / $12" }
+    { type: "welcome", content: "👋 Здравствуйте.\nМеня зовут Михаил. Я основатель школы Точка опоры.\nВы выбрали название «Не волшебная таблетка, но близко» — значит, цените честность.\nЯ не буду говорить, что вы всё бросите и улетите.\n\nЧто получите:\n🎧 3 мин — настройка перед практикой\n🎧 10 мин — первая технология (Ключ №1)\n🎧 7 мин — интеграция после практики\n🎁 Бонус — аудиоподкаст «5 врат технология»\n📝 3 шага к почти волшебству — простые действия, которые вы делаете после медитации\n\nЭто первый кирпич.\nНачнём? Нажмите ДА", btnText: "ДА" },
+    { type: "audio", audio: "https://files.catbox.moe/qipf0o.mp3", title: "🎧 Шаг 1. Настройка (3 минуты)", text: "Слушайте перед медитацией. Наденьте наушники, закройте глаза.\n👇 Когда закончите, нажмите ДАЛЕЕ", btnText: "ДАЛЕЕ" },
+    { type: "audio", audio: "https://files.catbox.moe/udem2c.mp3", title: "🔑 Ключ 1 · 5 врат (10 минут)", text: "«Не волшебная таблетка, но близко»\n\n🎧 10 минут тишины внутри и снаружи. Лучше заранее позаботьтесь о том, чтобы вас никто не потревожил.\n\nКак принять:\n• Наденьте наушники\n• Закройте глаза\n• Дышите свободно\n\n🌀 После окончания нажмите ДАЛЕЕ → интеграция 7 минут", btnText: "ДАЛЕЕ → интеграция" },
+    { type: "audio", audio: "https://files.catbox.moe/vmafp1.mp3", title: "🧩 Шаг 3 из 4. Интеграция (7 минут)", text: "Вы прошли медитацию. Теперь — самое важное: закрепить состояние.\n🎧 Наденьте наушники, закройте глаза.\nЭтот короткий трек поможет «упаковать» ощущения в тело, чтобы они остались с вами.\n👇 Нажмите ДАЛЕЕ", btnText: "ДАЛЕЕ" },
+    { type: "bonus_podcast", content: "📝 Шаг 4 из 4. Три шага к почти волшебству\n\nВы уже прослушали контент. Теперь — ваше действие (это и отличает «не таблетку» от таблетки):\n\n📝 Три шага к почти волшебству:\n1. Запишите одно ощущение, которое появилось во время или после практики.\n2. Спросите: «Что я могу сделать прямо сейчас, чтобы продлить это состояние?» — и сделайте.\n\n🎁 Ваш бонус: подкаст «5 врат медитации» — о том, какие уровни открывает регулярная практика.\nЕсли вы дошли сюда — вы уже не ищете таблетку.", btnText: "🎁 Получить бонус-подкаст" },
+    { type: "next_key_prompt", nextKey: "key2", description: "Хотите остальные 3 ключа (медитации 2,3,4) по быту, душе и социуму?\n\n✨ Начните с ключа 2 «Золотое сияние» – практика для баланса в повседневности." }
 ];
 
 const freeSteps_en = [
-    { type: "welcome", content: "👋 Hello.\nMy name is Mikhail...", btnText: "YES" },
-    { type: "audio", audio: "https://files.catbox.moe/qipf0o.mp3", title: "🎧 Step 1. Tuning (3 minutes)", text: "Listen before meditation...", btnText: "NEXT" },
-    { type: "audio", audio: "https://files.catbox.moe/udem2c.mp3", title: "🔑 Key 1 · 5 Gates (10 minutes)", text: "\"Not a magic pill, but close\"...", btnText: "NEXT → integration" },
-    { type: "audio", audio: "https://files.catbox.moe/vmafp1.mp3", title: "🧩 Step 3 of 4. Integration (7 minutes)", text: "You've completed the meditation...", btnText: "NEXT" },
-    { type: "bonus_podcast", content: "📝 Step 4 of 4. Three steps to almost magic...", btnText: "🎁 Get bonus podcast" },
-    { type: "next_key_prompt", nextKey: "key2", description: "Do you want the remaining 3 keys...\n💰 Price of Key 2: 890 ₽ / $12" }
+    { type: "welcome", content: "👋 Hello.\nMy name is Mikhail. I am the founder of the School \"Point of Support\".\nYou chose the title \"Not a magic pill, but close\" – meaning you value honesty.\nI won't tell you that you'll fly away.\n\nWhat you'll get:\n🎧 3 min – pre-practice tuning\n🎧 10 min – first technology (Key #1)\n🎧 7 min – post-practice integration\n🎁 Bonus – audio podcast \"5 Gates Technology\"\n📝 3 steps to almost magic – simple actions after meditation\n\nThis is the first brick.\nShall we start? Press YES", btnText: "YES" },
+    { type: "audio", audio: "https://files.catbox.moe/qipf0o.mp3", title: "🎧 Step 1. Tuning (3 minutes)", text: "Listen before meditation. Put on headphones, close your eyes.\n👇 When finished, press NEXT", btnText: "NEXT" },
+    { type: "audio", audio: "https://files.catbox.moe/udem2c.mp3", title: "🔑 Key 1 · 5 Gates (10 minutes)", text: "\"Not a magic pill, but close\"\n\n🎧 10 minutes of silence inside and outside. Better make sure no one disturbs you.\n\nHow to practice:\n• Put on headphones\n• Close your eyes\n• Breathe freely\n\n🌀 After finishing, press NEXT → integration 7 min", btnText: "NEXT → integration" },
+    { type: "audio", audio: "https://files.catbox.moe/vmafp1.mp3", title: "🧩 Step 3 of 4. Integration (7 minutes)", text: "You've completed the meditation. Now – the most important: stabilize the state.\n🎧 Put on headphones, close your eyes.\nThis short track will help \"pack\" the sensations into the body so they stay with you.\n👇 Press NEXT", btnText: "NEXT" },
+    { type: "bonus_podcast", content: "📝 Step 4 of 4. Three steps to almost magic\n\nYou've already listened to the content. Now – your action (this is what distinguishes \"not a pill\" from a pill):\n\n📝 Three steps to almost magic:\n1. Write down one feeling that appeared during or after the practice.\n2. Ask: \"What can I do right now to prolong this state?\" – and do it.\n\n🎁 Your bonus: podcast \"5 Gates of Meditation\" – about the levels that regular practice opens.\nIf you've come this far – you are no longer looking for a pill.", btnText: "🎁 Get bonus podcast" },
+    { type: "next_key_prompt", nextKey: "key2", description: "Do you want the remaining 3 keys (meditations 2,3,4) for everyday life, soul, and society?\n\n✨ Start with Key 2 \"Golden Glow\" – a practice for balance in daily life." }
 ];
 
 function getFreeSteps() { return currentLang === 'ru' ? freeSteps_ru : freeSteps_en; }
@@ -175,8 +325,9 @@ function renderFreeStep() {
         innerHtml = `<div class="med-title">🎁 Бонус</div><div class="med-sub">${step.content}</div><button id="bonusPodcastBtn" class="btn-audio btn-secondary">${step.btnText}</button><button id="stepNextBtn" class="btn-audio" style="margin-top:20px;">${t.complete}</button>`;
     } else if(step.type === 'next_key_prompt') {
         const nextKey = step.nextKey, purchased = userStatus[nextKey];
+        const priceText = currentLang === 'ru' ? '890 ₽' : '$12';
         if(purchased) innerHtml = `<div class="med-title">🔓 Переход к следующему ключу</div><div class="med-sub">${step.description}</div><button id="nextKeyBtn" class="btn-audio">${t.goToKey}</button>`;
-        else innerHtml = `<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${step.description}</div><button id="buyNextKeyBtn" class="btn-audio">${t.buy} (890 ₽ / $12)</button>`;
+        else innerHtml = `<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${step.description}</div><button id="buyNextKeyBtn" class="btn-audio">${t.buy} (${priceText})</button>`;
         innerHtml += `<button id="homeAfterKeyBtn" class="back-home">← ${t.toHome}</button>`;
     }
     innerHtml += `<div style="display:flex; justify-content:space-between; margin-top:20px;"><button id="stepBackBtn" class="back-home">${t.back}</button><button id="stepStartBtn" class="back-to-start">${t.toStart}</button><button id="stepHomeBtn" class="back-home">${t.toHome}</button></div>`;
@@ -220,7 +371,7 @@ function renderFreeStep() {
 
 function startFreeKey() { freeStepIndex=0; freeHistory=[]; renderFreeStep(); }
 
-// ======================== ПЛАТНЫЕ КЛЮЧИ (2,3,4) ========================
+// ======================== ПЛАТНЫЕ КЛЮЧИ ========================
 async function loadUserStatus() {
     const webApp = window.Telegram?.WebApp;
     if(!webApp?.initData) return;
@@ -290,13 +441,12 @@ function renderStepWithFullscreen(step, nextCallback, backCallback, homeCallback
     } else if(isAudioStep) {
         innerHtml = `<div class="med-title">${step.title||'🎧 Аудио'}</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div>`;
         if(step.type==='audio_with_image') innerHtml += `<div class="image-container"><img src="${step.image}" alt="illustration" loading="lazy"></div>`;
-        // Если в step.btnText уже есть перевод из KV, используем его, иначе заменяем стандартным
         let btnText = step.btnText || t.next;
-        // Для замены стандартных кнопок на локализованные
+        // Локализация стандартных кнопок, если они не переведены в JSON
         if (step.btnText === '▶ Прослушать подкаст') btnText = t.listenPodcast;
         if (step.btnText === '🎧 Начать медитацию') btnText = t.startPractice;
         if (step.btnText === '🎧 Получить подкаст') btnText = t.listenPodcast;
-        if (step.btnText === '🖼️ Просмотреть картинки') btnText = '🖼️ ' + (currentLang === 'ru' ? 'Показать иллюстрации' : 'Show illustrations');
+        if (step.btnText === '🖼️ Просмотреть картинки') btnText = currentLang === 'ru' ? '🖼️ Показать иллюстрации' : '🖼️ Show illustrations';
         if (step.btnText === '✍️ Далее') btnText = t.next;
         if (step.btnText === '🎧 К аудиоподкасту') btnText = t.listenConclusion;
         innerHtml += `<div id="playerContainer"></div><button id="stepNextBtn" class="btn-audio">${btnText}</button>`;
@@ -307,9 +457,12 @@ function renderStepWithFullscreen(step, nextCallback, backCallback, homeCallback
         innerHtml = `<div class="med-title">📝 Осмысление</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div>${step.questions.map((q,i)=>`<div class="quiz-question">${i+1}. ${q}</div>`).join('')}<button id="stepNextBtn" class="btn-audio">${t.answer}</button>`;
     } else if(step.type==='next_key_prompt') {
         const nextKey = step.nextKey, purchased = userStatus[nextKey];
-        const priceText = nextKey === 'key3' ? (currentLang === 'ru' ? '1390 ₽ / $19' : '1390 ₽ / $19') : (currentLang === 'ru' ? '1890 ₽ / $25' : '1890 ₽ / $25');
+        let priceText = '';
+        if (nextKey === 'key3') priceText = currentLang === 'ru' ? '1390 ₽' : '$19';
+        else if (nextKey === 'key4') priceText = currentLang === 'ru' ? '1890 ₽' : '$25';
+        else priceText = currentLang === 'ru' ? '890 ₽' : '$12';
         if(purchased) innerHtml = `<div class="med-title">🔓 Переход к следующему ключу</div><div class="med-sub">${step.description||'Вы прошли этот ключ!'}</div><button id="nextKeyBtn" class="btn-audio">${t.goToKey}</button>`;
-        else innerHtml = `<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${step.description||`Откройте ${nextKey==='key3'? (currentLang === 'ru' ? 'КЛЮЧ 3' : 'KEY 3') : (currentLang === 'ru' ? 'КЛЮЧ 4' : 'KEY 4')}`}</div><button id="buyNextKeyBtn" class="btn-audio">${t.buy} (${priceText})</button>`;
+        else innerHtml = `<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${step.description||`Откройте ${nextKey==='key3'?(currentLang==='ru'?'КЛЮЧ 3':'KEY 3'):(currentLang==='ru'?'КЛЮЧ 4':'KEY 4')}`}</div><button id="buyNextKeyBtn" class="btn-audio">${t.buy} (${priceText})</button>`;
         innerHtml += `<button id="homeAfterKeyBtn" class="back-home">← ${t.toHome}</button>`;
     } else if(step.type==='bonus_pdf') {
         innerHtml = `<div class="med-title">📘 Бонусный материал</div><div class="med-sub">${(step.text||'').replace(/\n/g,'<br>')}</div><a href="${step.pdf}" target="_blank" class="btn-audio" style="display:inline-block;">${step.btnText}</a><button id="stepNextBtn" class="btn-audio">${t.next}</button>`;
@@ -399,8 +552,8 @@ async function onKeyClick(keyId){
     if(userStatus[keyId]) {
         openKeyContent(keyId);
     } else {
-        const prices={key2:'890 ₽ / $12', key3:'1390 ₽ / $19', key4:'1890 ₽ / $25'};
-        if(confirm(`${keyId.toUpperCase()} — ${prices[keyId]}\nОплатить через Tribute?`)) openTributePayment(TRIBUTE_LINKS[keyId]);
+        const priceText = currentLang === 'ru' ? {key2:'890 ₽', key3:'1390 ₽', key4:'1890 ₽'} : {key2:'$12', key3:'$19', key4:'$25'};
+        if(confirm(`${keyId.toUpperCase()} — ${priceText[keyId]}\n${currentLang === 'ru' ? 'Оплатить через Tribute?' : 'Pay via Tribute?'}`)) openTributePayment(TRIBUTE_LINKS[keyId]);
     }
 }
 
