@@ -154,7 +154,7 @@ let currentLang = localStorage.getItem('app_lang') || 'ru';
 // ======================== ЛОКАЛИЗАЦИЯ ========================
 const translations = {
     ru: {
-        tagline: '«Не волшебная таблетка, но близко»',
+        tagline: '«Не волшебная таблетка, но близко к тому, чтобы ты проснулся»',
         buyAllPrefix: 'Купить все ключи (2+3+4)',
         allPrice: '2990 ₽',
         key1Title: 'КЛЮЧ 1',
@@ -193,7 +193,7 @@ const translations = {
         allPriceShort: '2990 ₽'
     },
     en: {
-        tagline: '"Not a magic pill, but close"',
+        tagline: '"Not a magic pill, but close to waking you up"',
         buyAllPrefix: 'Buy all keys (2+3+4)',
         allPrice: '$40',
         key1Title: 'KEY 1',
@@ -390,6 +390,12 @@ function updateStatusUI(){
     const k2=document.getElementById('key2Status'); if(k2){ k2.innerHTML=userStatus.key2 ? t.accessOpen : t.accessClosed; k2.className=userStatus.key2?'status-badge status-open':'status-badge status-closed';}
     const k3=document.getElementById('key3Status'); if(k3){ if(!userStatus.key3) k3.innerHTML=t.accessClosed; else if(userStatus.key3 && !completed.key2) k3.innerHTML=t.firstComplete; else k3.innerHTML=t.accessOpen; k3.className=(userStatus.key3 && completed.key2)?'status-badge status-open':(userStatus.key3?'status-badge status-locked':'status-badge status-closed');}
     const k4=document.getElementById('key4Status'); if(k4){ if(!userStatus.key4) k4.innerHTML=t.accessClosed; else if(userStatus.key4 && (!completed.key2 || !completed.key3)) k4.innerHTML=t.firstComplete2; else k4.innerHTML=t.accessOpen; k4.className=(userStatus.key4 && completed.key2 && completed.key3)?'status-badge status-open':'status-badge status-locked';}
+    // Обновление статуса для Ключа 1 (бесплатный, всегда открыт)
+    const k1 = document.getElementById('key1Status');
+    if(k1) {
+        k1.innerHTML = t.accessOpen;
+        k1.className = 'status-badge status-open';
+    }
 }
 
 function openTributePayment(link){ if(window.Telegram?.WebApp) window.Telegram.WebApp.openLink(link); else window.open(link,'_blank'); setTimeout(()=>loadUserStatus(),2000); }
