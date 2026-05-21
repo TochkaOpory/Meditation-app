@@ -45,7 +45,7 @@ const TRIBUTE_LINKS = {
     key4: 'https://t.me/tribute/app?startapp=puby',
     all:  'https://t.me/tribute/app?startapp=pubz',
     donate: 'https://t.me/tribute/app?startapp=dJwq',
-    training: 'https://t.me/tribute/app?startapp=dJwq'  // ← замените на ссылку начального обучения
+    training: 'https://web.tribute.tg/p/vPL'  // ← замените на ссылку начального обучения
 };
 const AUDIO_URLS = { bonus: 'https://files.catbox.moe/mhz6kz.mp3' };
 
