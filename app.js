@@ -183,11 +183,12 @@ function openKosmoSection(){
     wrap.appendChild(header);
 
     const blocks=[
-        {id:'buddhist', icon:'🌸', label:'Буддийский блок',    labelEn:'Buddhist Block'},
-        {id:'magical',  icon:'🔥', label:'Магический Блок',    labelEn:'Magical Block'},
-        {id:'magister', icon:'⚡', label:'Магистровый блок',   labelEn:'Magister Block'},
-        {id:'block4',   icon:'🌌', label:'4-й Блок (Хутта)',   labelEn:'4th Block (Khutta)'},
-        {id:'zoroastr', icon:'🕯️', label:'Зороастризм',        labelEn:'Zoroastrianism'},
+        {id:'vvedenie',          icon:'📖', label:'Введение',              labelEn:'Introduction'},
+        {id:'buddhist',          icon:'🌸', label:'Буддийский блок',       labelEn:'Buddhist Block'},
+        {id:'magical',           icon:'🔥', label:'Магический Блок',       labelEn:'Magical Block'},
+        {id:'magister',          icon:'⚡', label:'Магистровый блок',      labelEn:'Magister Block'},
+        {id:'zoroastr',          icon:'🕯️', label:'Зороастризм',           labelEn:'Zoroastrianism'},
+        {id:'ognenniy_tsvetok',  icon:'🌸', label:'Огненный цветок',       labelEn:'Fire Flower'},
     ];
 
     blocks.forEach(bl=>{
