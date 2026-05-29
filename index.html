@@ -36,16 +36,6 @@
         .vratas-panel { display:none; margin-bottom:14px; padding:14px; background:rgba(5,4,14,0.55); border:1px solid rgba(212,175,55,0.2); border-radius:22px; }
         .vratas-panel.open { display:block; animation:fadeInUp 0.3s ease; }
 
-        /* ===== Кнопка записи на обучение ===== */
-        .btn-training {
-            background:rgba(212,175,55,0.08); border:1px solid rgba(212,175,55,0.45);
-            border-radius:60px; padding:15px 22px; color:#FFE9B6;
-            font-size:14px; font-weight:600; cursor:pointer;
-            width:100%; text-align:center; margin-top:14px;
-            transition:background 0.2s,box-shadow 0.2s; backdrop-filter:blur(5px);
-        }
-        .btn-training:hover { background:rgba(212,175,55,0.2); box-shadow:0 0 14px rgba(212,175,55,0.2); }
-
         /* ===== Блоки Космоэнергетики ===== */
         .kosmo-block-btn {
             display:flex; align-items:center; gap:14px; width:100%;
@@ -58,6 +48,35 @@
         .kosmo-block-icon { font-size:24px; flex-shrink:0; }
         .kosmo-block-label { font-family:'Playfair Display',serif; font-size:16px; font-weight:600; color:#FFE9B6; flex:1; text-align:left; }
         .kosmo-block-count { font-size:11px; color:rgba(212,175,55,0.65); white-space:nowrap; }
+
+        /* ===== Кнопка записи на обучение (внутри блока космоэнергетика) ===== */
+        .btn-training-kosmo {
+            background: linear-gradient(135deg, rgba(212,175,55,0.18) 0%, rgba(30,10,80,0.5) 100%);
+            border: 1.5px solid #D4AF37;
+            border-radius: 22px;
+            padding: 18px 22px;
+            color: #FFE9B6;
+            font-family: 'Playfair Display', serif;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            margin-top: 18px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 18px rgba(212,175,55,0.18), inset 0 0 20px rgba(212,175,55,0.06);
+        }
+        .btn-training-kosmo:hover {
+            background: linear-gradient(135deg, rgba(212,175,55,0.32) 0%, rgba(40,15,100,0.6) 100%);
+            box-shadow: 0 0 28px rgba(212,175,55,0.38);
+            transform: translateY(-2px);
+        }
 
         /* ===== Частоты ===== */
         .freq-card { background:rgba(8,6,18,0.72); border:1px solid rgba(212,175,55,0.28); border-radius:14px; margin-bottom:8px; overflow:hidden; }
@@ -124,10 +143,9 @@
                     </div>
                 </div>
 
-                <!-- Кнопка записи -->
-                <button id="btnTraining" class="btn-training">🎓 Записаться на начальное обучение</button>
+                <!-- КНОПКА ЗАПИСИ УБРАНА С ГЛАВНОЙ — она теперь внутри раздела Космоэнергетика -->
 
-                <button id="donateBtn" class="btn-donate" style="margin-top:14px;">👋 Передать привет автору</button>
+                <button id="donateBtn" class="btn-donate" style="margin-top:14px;">💛 <span id="donateBtnText">Донат автору</span></button>
                 <div class="note" id="note">нажмите на раздел, чтобы начать</div>
             </div>
             <div id="dynamicPanel" class="hidden"></div>
