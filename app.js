@@ -45,7 +45,7 @@ const TRIBUTE_LINKS = {
     key4: 'https://t.me/tribute/app?startapp=puby',
     all:  'https://t.me/tribute/app?startapp=pubz',
     donate: 'https://t.me/tribute/app?startapp=dJwq',
-    training: 'https://web.tribute.tg/p/vPL'  // ← замените на ссылку начального обучения
+    training: 'https://web.tribute.tg/p/vPL'
 };
 const AUDIO_URLS = { bonus: 'https://files.catbox.moe/mhz6kz.mp3' };
 
@@ -65,10 +65,9 @@ const T = {
         key2Title:"КЛЮЧ 2", key3Title:"КЛЮЧ 3", key4Title:"КЛЮЧ 4",
         key2Name:"Золотое сияние", key3Name:"Искусство быть", key4Name:"Субстрат жизненности",
         key2Price:"890 ₽", key3Price:"1390 ₽", key4Price:"1890 ₽",
-        donate:"👋 Передать привет автору", note:"нажмите на раздел, чтобы начать",
+        // ИЗМЕНЕНИЕ 2: переименована кнопка
+        donate:"💛 Донат автору", note:"нажмите на раздел, чтобы начать",
         accessOpen:"✓ открыт доступ", accessClosed:"🔒 закрыт доступ",
-        firstComplete:"🔓 сначала пройдите КЛЮЧ 2",
-        firstComplete2:"🔓 сначала пройдите КЛЮЧ 2 и КЛЮЧ 3",
         back:"← Назад", toStart:"🏁 В начало", toHome:"🏠 На главную",
         next:"Далее", answer:"✍️ Ответить", buy:"💳 Купить",
         goToKey:"🔓 Перейти к следующему ключу",
@@ -85,10 +84,9 @@ const T = {
         key2Title:"KEY 2", key3Title:"KEY 3", key4Title:"KEY 4",
         key2Name:"Golden Glow", key3Name:"The Art of Being", key4Name:"Substrate of Vitality",
         key2Price:"$12", key3Price:"$19", key4Price:"$25",
-        donate:"👋 Say hi to author", note:"tap a section to start",
+        // ИЗМЕНЕНИЕ 2: переименована кнопка
+        donate:"💛 Donate to author", note:"tap a section to start",
         accessOpen:"✓ access granted", accessClosed:"🔒 access closed",
-        firstComplete:"🔓 complete KEY 2 first",
-        firstComplete2:"🔓 complete KEY 2 and KEY 3 first",
         back:"← Back", toStart:"🏁 To start", toHome:"🏠 Home",
         next:"Next", answer:"✍️ Answer", buy:"💳 Buy",
         goToKey:"🔓 Go to next key",
@@ -116,11 +114,11 @@ function updateUILanguage(){
     document.getElementById('key2Price').innerText = t('key2Price');
     document.getElementById('key3Price').innerText = t('key3Price');
     document.getElementById('key4Price').innerText = t('key4Price');
-    document.getElementById('donateBtn').innerText = t('donate');
+    // ИЗМЕНЕНИЕ 2: обновляем текст кнопки доната
+    document.getElementById('donateBtnText').innerText = currentLang === 'en' ? 'Donate to author' : 'Донат автору';
     document.getElementById('note').innerText = t('note');
     document.getElementById('lblVratas').innerText = t('lblVratas');
     document.getElementById('lblKosmo').innerText = t('lblKosmo');
-    document.getElementById('btnTraining').innerText = t('btnTraining');
     updateStatusUI();
 }
 
@@ -201,8 +199,15 @@ function openKosmoSection(){
         wrap.appendChild(btn);
     });
 
+    // ИЗМЕНЕНИЕ 1: кнопка записи перемещена сюда и выделена
+    const trainingBtn = document.createElement('button');
+    trainingBtn.className = 'btn-training-kosmo';
+    trainingBtn.innerHTML = `🎓 <span>${t('btnTraining')}</span>`;
+    trainingBtn.addEventListener('click', () => { openLink(TRIBUTE_LINKS.training); });
+    wrap.appendChild(trainingBtn);
+
     const homeBtn=document.createElement('button');
-    homeBtn.className='back-home'; homeBtn.style.cssText='margin-top:20px;display:block;width:100%;';
+    homeBtn.className='back-home'; homeBtn.style.cssText='margin-top:16px;display:block;width:100%;';
     homeBtn.innerText=`🏠 ${t('toHome')}`; homeBtn.addEventListener('click',goHome);
     wrap.appendChild(homeBtn);
 
@@ -332,13 +337,43 @@ async function loadUserStatus(){
     }catch(e){console.error(e);}
 }
 
+// ИЗМЕНЕНИЕ 3 и 4: убираем логику "сначала пройдите ключ 2/3",
+// показываем просто "открыт доступ" если куплено,
+// и скрываем кнопку "купить все" если хотя бы один ключ куплен
 function updateStatusUI(){
+    // Кнопка "купить все" — скрываем если хотя бы один ключ куплен
+    const buyAllBtn = document.getElementById('buyAllBtn');
+    if(buyAllBtn){
+        const anyPurchased = userStatus.key2 || userStatus.key3 || userStatus.key4;
+        buyAllBtn.style.display = anyPurchased ? 'none' : '';
+    }
+
+    // Ключ 2
     const k2=document.getElementById('key2Status');
-    if(k2){k2.innerHTML=userStatus.key2?t('accessOpen'):t('accessClosed');k2.className=userStatus.key2?'status-badge status-open':'status-badge status-closed';}
+    if(k2){
+        k2.innerHTML = userStatus.key2 ? t('accessOpen') : t('accessClosed');
+        k2.className = userStatus.key2 ? 'status-badge status-open' : 'status-badge status-closed';
+    }
+    const k2price = document.getElementById('key2Price');
+    if(k2price) k2price.style.display = userStatus.key2 ? 'none' : '';
+
+    // Ключ 3
     const k3=document.getElementById('key3Status');
-    if(k3){k3.innerHTML=!userStatus.key3?t('accessClosed'):(completed.key2?t('accessOpen'):t('firstComplete'));k3.className=(userStatus.key3&&completed.key2)?'status-badge status-open':(userStatus.key3?'status-badge status-locked':'status-badge status-closed');}
+    if(k3){
+        k3.innerHTML = userStatus.key3 ? t('accessOpen') : t('accessClosed');
+        k3.className = userStatus.key3 ? 'status-badge status-open' : 'status-badge status-closed';
+    }
+    const k3price = document.getElementById('key3Price');
+    if(k3price) k3price.style.display = userStatus.key3 ? 'none' : '';
+
+    // Ключ 4
     const k4=document.getElementById('key4Status');
-    if(k4){k4.innerHTML=!userStatus.key4?t('accessClosed'):((completed.key2&&completed.key3)?t('accessOpen'):t('firstComplete2'));k4.className=(userStatus.key4&&completed.key2&&completed.key3)?'status-badge status-open':'status-badge status-locked';}
+    if(k4){
+        k4.innerHTML = userStatus.key4 ? t('accessOpen') : t('accessClosed');
+        k4.className = userStatus.key4 ? 'status-badge status-open' : 'status-badge status-closed';
+    }
+    const k4price = document.getElementById('key4Price');
+    if(k4price) k4price.style.display = userStatus.key4 ? 'none' : '';
 }
 
 function showBonusPodcast(){
@@ -454,7 +489,6 @@ function showError(msg){
 // ======================== ИНИЦИАЛИЗАЦИЯ ========================
 document.getElementById('btnVratas').addEventListener('click', toggleVratasPanel);
 document.getElementById('btnKosmo').addEventListener('click', openKosmoSection);
-document.getElementById('btnTraining').addEventListener('click', ()=>{ openLink(TRIBUTE_LINKS.training); });
 document.getElementById('buyAllBtn').addEventListener('click', ()=>{ openLink(TRIBUTE_LINKS.all); setTimeout(loadUserStatus,2000); });
 document.getElementById('donateBtn').addEventListener('click', ()=>{ openLink(TRIBUTE_LINKS.donate); });
 
