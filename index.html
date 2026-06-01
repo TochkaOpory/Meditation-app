@@ -1,158 +1,117 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Точка опоры</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        .lang-switcher { position:fixed; top:16px; right:16px; z-index:100; background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); border-radius:40px; padding:6px 12px; display:flex; gap:8px; border:1px solid rgba(212,175,55,0.5); }
-        .lang-btn { background:transparent; border:none; color:#FFE9B6; font-size:14px; font-weight:600; cursor:pointer; padding:4px 8px; border-radius:30px; transition:0.2s; }
-        .lang-btn.active { background:#D4AF37; color:#1a1408; }
-        .lang-btn:hover { background:rgba(212,175,55,0.3); }
-        .price-small { font-size:11px; margin-top:4px; color:#D4AF37; opacity:0.9; }
-
-        /* ===== Две главные кнопки ===== */
-        .main-nav { display:flex; flex-direction:column; gap:14px; margin:20px 0 16px; }
-        .btn-nav-main {
-            background:rgba(10,8,22,0.8);
-            border:1.5px solid rgba(212,175,55,0.55);
-            border-radius:28px; padding:20px 22px;
-            color:#FFE9B6; font-family:'Playfair Display',serif;
-            font-size:21px; font-weight:600; cursor:pointer;
-            width:100%; text-align:left; display:flex;
-            align-items:center; gap:12px;
-            transition:transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-            backdrop-filter:blur(12px);
-            box-shadow:0 4px 20px rgba(0,0,0,0.35);
-        }
-        .btn-nav-main:hover { transform:translateY(-2px); border-color:#D4AF37; box-shadow:0 0 24px rgba(212,175,55,0.3); }
-        .btn-nav-main.vratas { background:linear-gradient(135deg,rgba(180,120,20,0.2) 0%,rgba(10,8,22,0.85) 70%); }
-        .btn-nav-main.kosmo  { background:linear-gradient(135deg,rgba(30,10,80,0.4) 0%,rgba(10,8,22,0.85) 70%); }
-
-        /* ===== Панель «5 ВРАТ» — скрыта по умолчанию ===== */
-        .vratas-panel { display:none; margin-bottom:14px; padding:14px; background:rgba(5,4,14,0.55); border:1px solid rgba(212,175,55,0.2); border-radius:22px; }
-        .vratas-panel.open { display:block; animation:fadeInUp 0.3s ease; }
-
-        /* ===== Блоки Космоэнергетики ===== */
-        .kosmo-block-btn {
-            display:flex; align-items:center; gap:14px; width:100%;
-            background:rgba(10,8,22,0.75); border:1px solid rgba(212,175,55,0.35);
-            border-radius:18px; padding:16px 18px; margin-bottom:10px;
-            cursor:pointer; transition:transform 0.2s,border-color 0.2s,box-shadow 0.2s;
-            backdrop-filter:blur(8px);
-        }
-        .kosmo-block-btn:hover { transform:translateX(4px); border-color:#D4AF37; box-shadow:0 0 14px rgba(212,175,55,0.2); }
-        .kosmo-block-icon { font-size:24px; flex-shrink:0; }
-        .kosmo-block-label { font-family:'Playfair Display',serif; font-size:16px; font-weight:600; color:#FFE9B6; flex:1; text-align:left; }
-        .kosmo-block-count { font-size:11px; color:rgba(212,175,55,0.65); white-space:nowrap; }
-
-        /* ===== Кнопка записи на обучение (внутри блока космоэнергетика) ===== */
-        .btn-training-kosmo {
-            background: linear-gradient(135deg, rgba(212,175,55,0.18) 0%, rgba(30,10,80,0.5) 100%);
-            border: 1.5px solid #D4AF37;
-            border-radius: 22px;
-            padding: 18px 22px;
-            color: #FFE9B6;
-            font-family: 'Playfair Display', serif;
-            font-size: 17px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            text-align: center;
-            margin-top: 18px;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 0 18px rgba(212,175,55,0.18), inset 0 0 20px rgba(212,175,55,0.06);
-        }
-        .btn-training-kosmo:hover {
-            background: linear-gradient(135deg, rgba(212,175,55,0.32) 0%, rgba(40,15,100,0.6) 100%);
-            box-shadow: 0 0 28px rgba(212,175,55,0.38);
-            transform: translateY(-2px);
-        }
-
-        /* ===== Частоты ===== */
-        .freq-card { background:rgba(8,6,18,0.72); border:1px solid rgba(212,175,55,0.28); border-radius:14px; margin-bottom:8px; overflow:hidden; }
-        .freq-header { display:flex; align-items:center; justify-content:space-between; padding:13px 16px; cursor:pointer; transition:background 0.2s; }
-        .freq-header:hover { background:rgba(212,175,55,0.07); }
-        .freq-name { font-family:'Playfair Display',serif; font-size:15px; font-weight:600; color:#FFDF8C; letter-spacing:0.3px; }
-        .freq-toggle { color:rgba(212,175,55,0.55); font-size:11px; transition:transform 0.3s; flex-shrink:0; margin-left:8px; }
-        .freq-toggle.open { transform:rotate(180deg); }
-        .freq-body { padding:0 16px 14px; display:none; }
-        .freq-body.open { display:block; animation:fadeInUp 0.2s ease; }
-        .freq-desc { font-size:14px; color:rgba(255,245,210,0.85); line-height:1.65; border-left:2px solid rgba(212,175,55,0.35); padding-left:12px; margin:0; white-space:pre-wrap; }
-
-        @keyframes fadeInUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Точка опоры</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="canvas-container"></div>
-    <div class="app-wrapper">
-        <div class="app-container" id="mainAppContainer">
-            <div id="homeScreen">
-                <div class="lang-switcher">
-                    <button class="lang-btn" data-lang="ru">🇷🇺 RU</button>
-                    <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
-                </div>
-                <div class="header">
-                    <div class="brand">Точка опоры</div>
-                    <div class="tagline" id="tagline">«Не волшебная таблетка, но близко»</div>
-                </div>
 
-                <!-- Две главные кнопки -->
-                <div class="main-nav">
-                    <button id="btnVratas" class="btn-nav-main vratas">🔑 <span id="lblVratas">5 ВРАТ</span></button>
-                    <button id="btnKosmo"  class="btn-nav-main kosmo">✨ <span id="lblKosmo">КОСМОЭНЕРГЕТИКА</span></button>
-                </div>
+<!-- ══ LOADING SCREEN ══ -->
+<div id="loadingScreen">
+  <div class="loading-logo">Точка <span>·</span> опоры</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+  <div class="loading-sub">загружаем приложение</div>
+</div>
 
-                <!-- Панель «5 ВРАТ» (раскрывается) -->
-                <div class="vratas-panel" id="vratasPanel">
-                    <button id="buyAllBtn" class="btn-buy-all" style="margin-top:0;margin-bottom:14px;">🎁 <span id="buyAllText">Купить все ключи (2+3+4)</span> — <span id="allPriceSpan"></span></button>
-                    <div class="grid-2x2">
-                        <div class="key-card" data-key="key1" style="opacity:0.8;">
-                            <div class="key-number">КЛЮЧ 1</div>
-                            <div class="key-name">5 врат</div>
-                            <div class="price-small">Бесплатно</div>
-                            <div class="status-badge status-open">✓ открыт</div>
-                        </div>
-                        <div class="key-card" data-key="key2">
-                            <div class="key-number" id="key2Title">КЛЮЧ 2</div>
-                            <div class="key-name" id="key2Name">Золотое сияние</div>
-                            <div class="price-small" id="key2Price"></div>
-                            <div class="status-badge" id="key2Status">🔒 закрыт</div>
-                        </div>
-                        <div class="key-card" data-key="key3">
-                            <div class="key-number" id="key3Title">КЛЮЧ 3</div>
-                            <div class="key-name" id="key3Name">Искусство быть</div>
-                            <div class="price-small" id="key3Price"></div>
-                            <div class="status-badge" id="key3Status">🔒 закрыт</div>
-                        </div>
-                        <div class="key-card" data-key="key4">
-                            <div class="key-number" id="key4Title">КЛЮЧ 4</div>
-                            <div class="key-name" id="key4Name">Субстрат жизненности</div>
-                            <div class="price-small" id="key4Price"></div>
-                            <div class="status-badge" id="key4Status">🔒 закрыт</div>
-                        </div>
-                    </div>
-                </div>
+<div id="canvas-container"></div>
 
-                <!-- КНОПКА ЗАПИСИ УБРАНА С ГЛАВНОЙ — она теперь внутри раздела Космоэнергетика -->
+<div class="app-wrapper">
+  <div class="app-container" id="mainAppContainer">
 
-                <button id="donateBtn" class="btn-donate" style="margin-top:14px;">💛 <span id="donateBtnText">Донат автору</span></button>
-                <div class="note" id="note">нажмите на раздел, чтобы начать</div>
-            </div>
-            <div id="dynamicPanel" class="hidden"></div>
+    <!-- ══ HOME SCREEN ══ -->
+    <div id="homeScreen">
+
+      <!-- Lang -->
+      <div class="lang-switcher">
+        <button class="lang-btn" data-lang="ru">RU</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+
+      <!-- Header -->
+      <div class="header">
+        <div class="brand">Точка <span class="brand-dot">·</span> опоры</div>
+        <div class="tagline" id="tagline">«Не волшебная таблетка, но близко»</div>
+      </div>
+      <div class="gold-divider"></div>
+
+      <!-- Main nav -->
+      <div class="main-nav">
+        <button id="btnNeuro" class="btn-nav-main neuro ripple-host">
+          <span class="nav-icon">🧠</span>
+          <span class="nav-text"><span id="lblNeuro">НЕЙРОКОУЧИНГ</span></span>
+          <span class="nav-arrow">›</span>
+        </button>
+        <button id="btnVratas" class="btn-nav-main vratas ripple-host">
+          <span class="nav-icon">🔑</span>
+          <span class="nav-text"><span id="lblVratas">5 ВРАТ</span></span>
+          <span class="nav-arrow">›</span>
+        </button>
+        <button id="btnKosmo" class="btn-nav-main kosmo ripple-host">
+          <span class="nav-icon">✨</span>
+          <span class="nav-text"><span id="lblKosmo">КОСМОЭНЕРГЕТИКА</span></span>
+          <span class="nav-arrow">›</span>
+        </button>
+      </div>
+
+      <!-- 5 Врат panel -->
+      <div class="vratas-panel" id="vratasPanel">
+        <!-- Описание раздела -->
+        <div class="vratas-intro" id="vratasIntroText">
+          Пять практик-медитаций, которые последовательно открывают внутренние ресурсы — через тело, эмоции, разум и душу. Каждый ключ — отдельный уровень глубины. Ключ 1 бесплатен, ключи 2–4 открывают новые слои работы с собой.
         </div>
+
+        <button id="buyAllBtn" class="btn-buy-all ripple-host">
+          🎁 <span id="buyAllText">Купить все ключи (2+3+4)</span> — <span id="allPriceSpan"></span>
+        </button>
+
+        <div class="grid-2x2">
+          <div class="key-card ripple-host" data-key="key1" style="opacity:0.85;">
+            <div class="key-number">КЛЮЧ 1</div>
+            <div class="key-name">5 врат</div>
+            <div class="price-small">Бесплатно</div>
+            <div class="status-badge status-open">✓ открыт</div>
+          </div>
+          <div class="key-card ripple-host" data-key="key2">
+            <div class="key-number" id="key2Title">КЛЮЧ 2</div>
+            <div class="key-name" id="key2Name">Золотое сияние</div>
+            <div class="price-small" id="key2Price"></div>
+            <div class="status-badge" id="key2Status">🔒 закрыт</div>
+          </div>
+          <div class="key-card ripple-host" data-key="key3">
+            <div class="key-number" id="key3Title">КЛЮЧ 3</div>
+            <div class="key-name" id="key3Name">Искусство быть</div>
+            <div class="price-small" id="key3Price"></div>
+            <div class="status-badge" id="key3Status">🔒 закрыт</div>
+          </div>
+          <div class="key-card ripple-host" data-key="key4">
+            <div class="key-number" id="key4Title">КЛЮЧ 4</div>
+            <div class="key-name" id="key4Name">Субстрат жизненности</div>
+            <div class="price-small" id="key4Price"></div>
+            <div class="status-badge" id="key4Status">🔒 закрыт</div>
+          </div>
+        </div>
+      </div>
+
+      <button id="donateBtn" class="btn-donate ripple-host">
+        💛 <span id="donateBtnText">Донат автору</span>
+      </button>
+      <div class="note" id="note">нажмите на раздел, чтобы начать</div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="kosmo_data.js"></script>
-    <script src="app.js"></script>
+
+    <!-- ══ DYNAMIC PANEL ══ -->
+    <div id="dynamicPanel" class="hidden"></div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="kosmo_data.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
