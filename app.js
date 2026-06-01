@@ -407,9 +407,9 @@ function openNeuroSection(){
   diagBtn.addEventListener('click',()=>{
     // Отправляем слово СДВИГ в бот
     if(window.Telegram?.WebApp){
-      window.Telegram.WebApp.openTelegramLink(`https://t.me/${BOT_USERNAME}?СДВИГ`);
+      window.Telegram.WebApp.openTelegramLink(`https://t.me/${BOT_USERNAME}?start=startdiog`);
     } else {
-      openLink(`https://t.me/${BOT_USERNAME}?CДВИГ`);
+      openLink(`https://t.me/${BOT_USERNAME}?start=startdiog`);
     }
   });
   wrap.appendChild(diagBtn);
