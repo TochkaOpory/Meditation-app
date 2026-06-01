@@ -1,4 +1,66 @@
-// ======================== УТИЛИТЫ ========================
+// ======================== СЧЁТЧИК ПРОДАЖ «5 ВРАТ» ========================
+const PROMO_LIMIT = 100;
+const PROMO_PRICE_RU = '990 ₽';
+const PROMO_PRICE_EN = '$11';
+const REGULAR_PRICE_RU = '2990 ₽';
+const REGULAR_PRICE_EN = '$33';
+const WORKER_COUNTER_URL = `${WORKER_URL}/promo-counter`;
+
+let promoSalesCount = 0;
+let promoActive = true;
+
+async function loadPromoCounter() {
+  try {
+    const resp = await fetch(`${WORKER_URL}/promo-counter`);
+    if (resp.ok) {
+      const d = await resp.json();
+      promoSalesCount = d.count || 0;
+      promoActive = promoSalesCount < PROMO_LIMIT;
+    }
+  } catch(e) {
+    // Если воркер не поддерживает эндпоинт, читаем из localStorage как fallback
+    promoSalesCount = parseInt(localStorage.getItem('promo_sales_count') || '0');
+    promoActive = promoSalesCount < PROMO_LIMIT;
+  }
+  updatePromoPriceUI();
+}
+
+function getCurrentAllPrice(lang) {
+  if (promoActive) return lang === 'en' ? PROMO_PRICE_EN : PROMO_PRICE_RU;
+  return lang === 'en' ? REGULAR_PRICE_EN : REGULAR_PRICE_RU;
+}
+
+function getPromoNote(lang) {
+  if (promoActive) {
+    const left = PROMO_LIMIT - promoSalesCount;
+    if (lang === 'en') return `🔥 Special offer for the first 100 users — only ${left} spots left! Price will return to ${REGULAR_PRICE_EN}.`;
+    return `🔥 Специальная цена для первых 100 пользователей — осталось ${left} мест! После цена вернётся на ${REGULAR_PRICE_RU}.`;
+  } else {
+    if (lang === 'en') return `ℹ️ The promotional offer has ended. Regular price ${REGULAR_PRICE_EN}.`;
+    return `ℹ️ Акция завершена. Действует стандартная цена ${REGULAR_PRICE_RU}.`;
+  }
+}
+
+function updatePromoPriceUI() {
+  // Обновляем кнопку «Купить все ключи»
+  const allPriceSpan = document.getElementById('allPriceSpan');
+  if (allPriceSpan) allPriceSpan.innerText = getCurrentAllPrice(currentLang);
+
+  // Обновляем/создаём пояснительную строку под кнопкой
+  let noteEl = document.getElementById('promoNote');
+  if (!noteEl) {
+    noteEl = document.createElement('div');
+    noteEl.id = 'promoNote';
+    noteEl.style.cssText = 'font-size:12px;color:var(--gold);text-align:center;margin:-6px 0 10px;line-height:1.5;padding:0 4px;';
+    const buyAllBtn = document.getElementById('buyAllBtn');
+    if (buyAllBtn && buyAllBtn.parentNode) {
+      buyAllBtn.parentNode.insertBefore(noteEl, buyAllBtn.nextSibling);
+    }
+  }
+  noteEl.innerText = getPromoNote(currentLang);
+}
+
+
 function stopActiveAudio(){ if(activeAudio){ activeAudio.pause(); activeAudio=null; } }
 function formatTime(sec){ if(isNaN(sec)||!isFinite(sec)) return '0:00'; const m=Math.floor(sec/60),s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
 function openLink(url){ if(window.Telegram?.WebApp) window.Telegram.WebApp.openLink(url); else window.open(url,'_blank'); }
@@ -43,7 +105,7 @@ let vratasOpen = false;
 const T = {
   ru: {
     tagline:'«Не волшебная таблетка, но близко к тому, чтобы ты проснулся»',
-    buyAllPrefix:'Получить все ключи (2+3+4)', allPrice:'990 ₽',
+    buyAllPrefix:'Получить все ключи (2+3+4)', get allPrice(){ return getCurrentAllPrice('ru'); },
     key2Title:'КЛЮЧ 2', key3Title:'КЛЮЧ 3', key4Title:'КЛЮЧ 4',
     key2Name:'Золотое сияние', key3Name:'Искусство быть', key4Name:'Субстрат жизненности',
     key2Price:'', key3Price:'', key4Price:'',
@@ -63,7 +125,7 @@ const T = {
   },
   en: {
     tagline:'"Not a magic pill, but close to waking you up"',
-    buyAllPrefix:'Get all keys (2+3+4)', allPrice:'$11',
+    buyAllPrefix:'Get all keys (2+3+4)', get allPrice(){ return getCurrentAllPrice('en'); },
     key2Title:'KEY 2', key3Title:'KEY 3', key4Title:'KEY 4',
     key2Name:'Golden Glow', key3Name:'The Art of Being', key4Name:'Substrate of Vitality',
     key2Price:'', key3Price:'', key4Price:'',
@@ -105,6 +167,7 @@ function updateUILanguage(){
   const vi = document.getElementById('vratasIntroText');
   if(vi) vi.innerText = t('vratasIntro');
   updateStatusUI();
+  updatePromoPriceUI();
 }
 
 function setLanguage(lang){
@@ -405,11 +468,10 @@ function openNeuroSection(){
   diagBtn.style.marginTop='20px';
   diagBtn.innerHTML=`🔍 <span>${t('btnDiagnostics')}</span>`;
   diagBtn.addEventListener('click',()=>{
-    // Отправляем слово СДВИГ в бот
     if(window.Telegram?.WebApp){
-      window.Telegram.WebApp.openTelegramLink(`https://t.me/${BOT_USERNAME}?start=startdiog`);
+      window.Telegram.WebApp.openTelegramLink(`https://t.me/${BOT_USERNAME}?start=startdiognostika`);
     } else {
-      openLink(`https://t.me/${BOT_USERNAME}?start=startdiog`);
+      openLink(`https://t.me/${BOT_USERNAME}?start=startdiognostika`);
     }
   });
   wrap.appendChild(diagBtn);
@@ -647,7 +709,7 @@ function renderStepWithFullscreen(step,nextCb,backCb,homeCb,startCb){
   } else if(step.type==='next_key_prompt'){
     const nk=step.nextKey,p=userStatus[nk];
     if(p) html=`<div class="med-title">🔓 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBtn" class="btn-audio ripple-host">${t('goToKey')}</button>`;
-    else html=`<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBuyBtn" class="btn-audio ripple-host">${currentLang==='ru'?'💳 Открыть все ключи — 990 ₽':'💳 Get all keys — $11'}</button>`;
+    else html=`<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBuyBtn" class="btn-audio ripple-host">${currentLang==='ru'?`💳 Открыть все ключи — ${getCurrentAllPrice('ru')}`:`💳 Get all keys — ${getCurrentAllPrice('en')}`}</button>`;
     html+=`<button id="snHomeBtn" class="back-home ripple-host">← ${t('toHome')}</button>`;
   } else if(step.type==='bonus_pdf'){
     html=`<div class="med-title">📘 Бонус</div><div class="med-sub">${txt(step.text)}</div><a href="${step.pdf}" target="_blank" class="btn-audio ripple-host" style="display:inline-block">${step.btnText}</a><button id="snBtn" class="btn-audio ripple-host">${t('next')}</button>`;
@@ -724,8 +786,11 @@ document.querySelectorAll('.key-card').forEach(card=>{
     loadUserStatus().then(()=>{
       if(userStatus[key]) openKeyContent(key);
       else{
-        const prices={key2:currentLang==='ru'?'890 ₽':'$12',key3:currentLang==='ru'?'1390 ₽':'$19',key4:currentLang==='ru'?'1890 ₽':'$25'};
-        if(confirm(`${currentLang==='ru'?'Открыть все 3 ключа за 990 ₽?':'Get all 3 keys for $11?'}`)){
+        const currentPrice = getCurrentAllPrice(currentLang);
+        const confirmMsg = currentLang==='ru'
+          ? `Открыть все 3 ключа за ${currentPrice}?`
+          : `Get all 3 keys for ${currentPrice}?`;
+        if(confirm(confirmMsg)){
           openLink(TRIBUTE_LINKS.all); setTimeout(loadUserStatus,2000);
         }
       }
@@ -748,6 +813,7 @@ function initApp(){
       btn.classList.toggle('active', btn.getAttribute('data-lang')===currentLang);
     });
     updateUILanguage();
+    loadPromoCounter();
     loadUserStatus().finally(()=>{ hideLoadingScreen(); });
   } else {
     setTimeout(initApp,100);
