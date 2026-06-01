@@ -29,7 +29,7 @@ const TRIBUTE_LINKS = {
   training: 'https://web.tribute.tg/p/vPL'
 };
 const AUDIO_URLS = { bonus: 'https://files.catbox.moe/mhz6kz.mp3' };
-const BOT_USERNAME = 'your_bot_username'; // замените на имя вашего бота
+const BOT_USERNAME = 'Tochkaopoypraktikbot';
 
 let userStatus = {key2:false,key3:false,key4:false};
 let completed = {key2:false,key3:false};
@@ -407,9 +407,9 @@ function openNeuroSection(){
   diagBtn.addEventListener('click',()=>{
     // Отправляем слово СДВИГ в бот
     if(window.Telegram?.WebApp){
-      window.Telegram.WebApp.openTelegramLink(`https://t.me/${Tochkaopoypraktikbot}?start=SDVIG`);
+      window.Telegram.WebApp.openTelegramLink(`https://t.me/${BOT_USERNAME}?start=SDVIG`);
     } else {
-      openLink(`https://t.me/${Tochkaopoypraktikbot}?СДВИГ`);
+      openLink(`https://t.me/${BOT_USERNAME}?start=SDVIG`);
     }
   });
   wrap.appendChild(diagBtn);
