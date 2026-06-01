@@ -43,43 +43,43 @@ let vratasOpen = false;
 const T = {
   ru: {
     tagline:'«Не волшебная таблетка, но близко к тому, чтобы ты проснулся»',
-    buyAllPrefix:'Купить все ключи (2+3+4)', allPrice:'2990 ₽',
+    buyAllPrefix:'Получить все ключи (2+3+4)', allPrice:'990 ₽',
     key2Title:'КЛЮЧ 2', key3Title:'КЛЮЧ 3', key4Title:'КЛЮЧ 4',
     key2Name:'Золотое сияние', key3Name:'Искусство быть', key4Name:'Субстрат жизненности',
-    key2Price:'890 ₽', key3Price:'1390 ₽', key4Price:'1890 ₽',
+    key2Price:'', key3Price:'', key4Price:'',
     donate:'💛 Донат автору', note:'нажмите на раздел, чтобы начать',
     accessOpen:'✓ открыт доступ', accessClosed:'🔒 закрыт доступ',
     back:'← Назад', toStart:'🏁 В начало', toHome:'🏠 На главную',
     next:'Далее', answer:'✍️ Ответить', buy:'💳 Купить',
     goToKey:'🔓 Перейти к следующему ключу',
     bonusPodcastButton:'🎁 Получить бонус-подкаст', complete:'Завершить',
-    lblNeuro:'НЕЙРОКОУЧИНГ', lblVratas:'5 ВРАТ', lblKosmo:'КОСМОЭНЕРГЕТИКА',
+    lblNeuro:'НЕЙРОКОУЧИНГ', lblVratas:'ПУСТОТА — ЭТО ФОРМА', lblKosmo:'КОСМОЭНЕРГЕТИКА',
     btnTraining:'🎓 Записаться на начальное обучение',
     btnDiagnostics:'🔍 Записаться на диагностику',
     kosmoSubtitle:'Выберите блок для изучения',
     neuroSubtitle:'Нейронаука для личной эффективности',
     backToBlocks:'← К блокам', freqCount:'частот',
-    vratasIntro:'Пять практик-медитаций, которые последовательно открывают внутренние ресурсы — через тело, эмоции, разум и душу. Каждый ключ — отдельный уровень глубины. Ключ 1 бесплатен, ключи 2–4 открывают новые слои работы с собой.',
+    vratasIntro:'Четыре практики-медитации, которые последовательно открывают внутренние ресурсы — через тело, эмоции, разум и душу. Каждый ключ — отдельный уровень глубины. Ключ 1 бесплатен, ключи 2–4 доступны единым пакетом.',
   },
   en: {
     tagline:'"Not a magic pill, but close to waking you up"',
-    buyAllPrefix:'Buy all keys (2+3+4)', allPrice:'$40',
+    buyAllPrefix:'Get all keys (2+3+4)', allPrice:'$11',
     key2Title:'KEY 2', key3Title:'KEY 3', key4Title:'KEY 4',
     key2Name:'Golden Glow', key3Name:'The Art of Being', key4Name:'Substrate of Vitality',
-    key2Price:'$12', key3Price:'$19', key4Price:'$25',
+    key2Price:'', key3Price:'', key4Price:'',
     donate:'💛 Donate to author', note:'tap a section to start',
     accessOpen:'✓ access granted', accessClosed:'🔒 access closed',
     back:'← Back', toStart:'🏁 To start', toHome:'🏠 Home',
     next:'Next', answer:'✍️ Answer', buy:'💳 Buy',
     goToKey:'🔓 Go to next key',
     bonusPodcastButton:'🎁 Get bonus podcast', complete:'Complete',
-    lblNeuro:'NEUROCOACHING', lblVratas:'5 GATES', lblKosmo:'KOSMOENERGETIKA',
+    lblNeuro:'NEUROCOACHING', lblVratas:'EMPTINESS IS FORM', lblKosmo:'KOSMOENERGETIKA',
     btnTraining:'🎓 Sign up for basic training',
     btnDiagnostics:'🔍 Book a diagnostic session',
     kosmoSubtitle:'Choose a block to study',
     neuroSubtitle:'Neuroscience for personal effectiveness',
     backToBlocks:'← Back to blocks', freqCount:'frequencies',
-    vratasIntro:'Five meditation practices that sequentially unlock inner resources — through body, emotions, mind and soul. Each key is a new level of depth. Key 1 is free; keys 2–4 open deeper layers of self-work.',
+    vratasIntro:'Four meditation practices that sequentially unlock inner resources — through body, emotions, mind and soul. Each key is a new level of depth. Key 1 is free; keys 2–4 are available as one complete package.',
   }
 };
 function t(k){ return (T[currentLang]||T.ru)[k]||k; }
@@ -141,7 +141,7 @@ function updateStatusUI(){
     const el=document.getElementById(id+'Status');
     if(el){ el.innerHTML=owned?t('accessOpen'):t('accessClosed'); el.className='status-badge '+(owned?'status-open':'status-closed'); }
     const pr=document.getElementById(id+'Price');
-    if(pr) pr.style.display=owned?'none':'';
+    if(pr) pr.style.display='none';
   };
   setKey('key2',userStatus.key2);
   setKey('key3',userStatus.key3);
@@ -183,11 +183,11 @@ function buildPlayer(url, containerId){
     }
   });
   audio.addEventListener('ended',()=>{ playing=false; pb.innerText='▶'; pb.style.background=''; });
-  audio.addEventListener('error',(e)=>{ console.error('Audio error',e); tm.innerText='⚠ ошибка загрузки'; });
+  audio.addEventListener('error',(e)=>{ console.error('Audio error',e); tm.innerText=currentLang==='ru'?'⚠ ошибка загрузки':'⚠ load error'; });
 
   pb.addEventListener('click',()=>{
     if(playing){ audio.pause(); pb.innerText='▶'; playing=false; }
-    else{ audio.src=audio.src||url; audio.play().then(()=>{ pb.innerText='⏸'; playing=true; }).catch(err=>{ console.error(err); tm.innerText='⚠ не удалось воспроизвести'; }); }
+    else{ audio.src=audio.src||url; audio.play().then(()=>{ pb.innerText='⏸'; playing=true; }).catch(err=>{ console.error(err); tm.innerText=currentLang==='ru'?'⚠ не удалось воспроизвести':'⚠ playback failed'; }); }
   });
   sb.addEventListener('mousedown',()=>{ dragging=true; });
   sb.addEventListener('input',()=>{ if(isFinite(audio.duration)) tm.innerText=`${formatTime(+sb.value)} / ${formatTime(audio.duration)}`; });
@@ -387,7 +387,7 @@ function openNeuroSection(){
 
   const intro=document.createElement('div');
   intro.className='neuro-intro-card';
-  intro.innerHTML=`<div style="font-size:13px;color:var(--ink-2);line-height:1.7;">Нейрокоучинг — синтез коучинга и нейронауки. Метод основан на нейропластичности — способности мозга создавать новые связи и «перепрограммировать» неэффективные паттерны поведения на любом этапе жизни.</div>`;
+  intro.innerHTML=`<div style="font-size:13px;color:var(--ink-2);line-height:1.7;">${currentLang==='ru'?'Нейрокоучинг — синтез коучинга и нейронауки. Метод основан на нейропластичности — способности мозга создавать новые связи и «перепрограммировать» неэффективные паттерны поведения на любом этапе жизни.':'Neurocoaching is a synthesis of coaching and neuroscience, based on neuroplasticity — the brain\'s ability to form new connections and reprogram ineffective behaviour patterns at any stage of life.'}</div>`;
   wrap.appendChild(intro);
 
   NEURO_BLOCKS.forEach(bl=>{
@@ -442,7 +442,7 @@ function openNeuroBlock(bl){
     vb.innerHTML=`<video controls preload="none" playsinline style="width:100%;display:block;border-radius:22px;">
       <source src="${data.videoUrl}" type="video/mp4">
     </video>
-    <div class="video-label">Нажмите ▶ для просмотра</div>`;
+    <div class="video-label">${currentLang==='ru'?'Нажмите ▶ для просмотра':'Tap ▶ to watch'}</div>`;
     wrap.appendChild(vb);
   }
 
@@ -583,16 +583,15 @@ function renderFreeStep(){
   let html='';
   const txt=v=>(v||'').replace(/\n/g,'<br>');
   if(step.type==='welcome'){
-    html=`<div class="med-title">📘 Добро пожаловать</div><div class="med-sub">${txt(step.content)}</div><button id="snBtn" class="btn-audio ripple-host">${step.btnText}</button>`;
+    html=`<div class="med-title">${currentLang==='ru'?'📘 Добро пожаловать':'📘 Welcome'}</div><div class="med-sub">${txt(step.content)}</div><button id="snBtn" class="btn-audio ripple-host">${step.btnText}</button>`;
   } else if(isAudio){
     html=`<div class="med-title">${step.title}</div><div class="med-sub">${txt(step.text)}</div><div id="playerContainer"></div><button id="snBtn" class="btn-audio ripple-host">${step.btnText}</button>`;
   } else if(step.type==='bonus_podcast'){
     html=`<div class="med-title">🎁 Бонус</div><div class="med-sub">${txt(step.content)}</div><button id="bpBtn" class="btn-audio btn-secondary ripple-host">${step.btnText}</button><button id="snBtn" class="btn-audio ripple-host" style="margin-top:12px;">${t('complete')}</button>`;
   } else if(step.type==='next_key_prompt'){
     const nk=step.nextKey,purchased=userStatus[nk];
-    const price=currentLang==='ru'?'890 ₽':'$12';
     if(purchased) html=`<div class="med-title">🔓 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBtn" class="btn-audio ripple-host">${t('goToKey')}</button>`;
-    else html=`<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBuyBtn" class="btn-audio ripple-host">${t('buy')} (${price})</button>`;
+    else html=`<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBuyBtn" class="btn-audio ripple-host">${currentLang==='ru'?'💳 Открыть все ключи — 990 ₽':'💳 Get all keys — $11'}</button>`;
     html+=`<button id="snHomeBtn" class="back-home ripple-host" style="margin-top:12px;">← ${t('toHome')}</button>`;
   }
   html+=`<div style="display:flex;justify-content:space-between;margin-top:22px;gap:8px;"><button id="snBack" class="back-home ripple-host">${t('back')}</button><button id="snStart" class="back-to-start ripple-host">${t('toStart')}</button><button id="snHome" class="back-home ripple-host">${t('toHome')}</button></div>`;
@@ -608,7 +607,7 @@ function renderFreeStep(){
   document.getElementById('bpBtn')?.addEventListener('click',e=>{e.preventDefault();showBonusPodcast();});
   if(step.type==='next_key_prompt'){
     if(userStatus[step.nextKey]) document.getElementById('nkBtn')?.addEventListener('click',()=>openKeyContent(step.nextKey));
-    else document.getElementById('nkBuyBtn')?.addEventListener('click',()=>{openLink(TRIBUTE_LINKS[step.nextKey]);setTimeout(loadUserStatus,2000);});
+    else document.getElementById('nkBuyBtn')?.addEventListener('click',()=>{openLink(TRIBUTE_LINKS.all);setTimeout(loadUserStatus,2000);});
     document.getElementById('snHomeBtn')?.addEventListener('click',goHome);
   }
 }
@@ -619,7 +618,7 @@ function showBonusPodcast(){
   stopActiveAudio();
   const outer=document.createElement('div'); outer.className='fullscreen-audio-card';
   const card=document.createElement('div'); card.className='meditation-card';
-  card.innerHTML=`<div class="med-title">🎁 Бонус: подкаст «5 врат»</div><div class="med-sub">${currentLang==='ru'?'Дополнительная аудиопрактика.':'Additional audio practice.'}</div><div id="bonusPlayer"></div><button id="closeBonusBtn" class="btn-audio btn-secondary ripple-host">${t('complete')}</button>`;
+  card.innerHTML=`<div class="med-title">${currentLang==='ru'?'🎁 Бонус: подкаст «Пустота — это форма»':'🎁 Bonus: podcast "Emptiness is Form"'}</div><div class="med-sub">${currentLang==='ru'?'Дополнительная аудиопрактика.':'Additional audio practice.'}</div><div id="bonusPlayer"></div><button id="closeBonusBtn" class="btn-audio btn-secondary ripple-host">${t('complete')}</button>`;
   outer.appendChild(card);
   const panel=document.getElementById('dynamicPanel');
   panel.innerHTML=''; panel.appendChild(outer);
@@ -636,20 +635,19 @@ function renderStepWithFullscreen(step,nextCb,backCb,homeCb,startCb){
   let html='';
   const txt=v=>(v||'').replace(/\n/g,'<br>');
   if(step.type==='welcome'||step.type==='text'){
-    html=`<div class="med-title">📘 Информация</div><div class="med-sub">${txt(step.content||step.text)}</div><button id="snBtn" class="btn-audio ripple-host">${t('next')}</button>`;
+    html=`<div class="med-title">${currentLang==='ru'?'📘 Информация':'📘 Info'}</div><div class="med-sub">${txt(step.content||step.text)}</div><button id="snBtn" class="btn-audio ripple-host">${t('next')}</button>`;
   } else if(isAudio){
     html=`<div class="med-title">${step.title||'🎧 Аудио'}</div><div class="med-sub">${txt(step.text)}</div>`;
     if(step.type==='audio_with_image') html+=`<div class="image-container"><img src="${step.image}" loading="lazy"></div>`;
     html+=`<div id="playerContainer"></div><button id="snBtn" class="btn-audio ripple-host">${step.btnText||t('next')}</button>`;
   } else if(step.type==='images_with_text'){
-    html=`<div class="med-title">🖼️ Иллюстрации</div><div class="med-sub">${txt(step.text)}</div><button id="showImgsBtn" class="btn-audio btn-secondary ripple-host">${step.btnText||'Показать'}</button><div id="hiddenImgs" style="display:none">${(step.images||[]).map(s=>`<div class="image-container"><img src="${s}" loading="lazy"></div>`).join('')}</div><button id="snBtn" class="btn-audio ripple-host" style="margin-top:12px;">${t('next')} →</button>`;
+    html=`<div class="med-title">${currentLang==='ru'?'🖼️ Иллюстрации':'🖼️ Illustrations'}</div><div class="med-sub">${txt(step.text)}</div><button id="showImgsBtn" class="btn-audio btn-secondary ripple-host">${step.btnText||(currentLang==='ru'?'Показать':'Show')}</button><div id="hiddenImgs" style="display:none">${(step.images||[]).map(s=>`<div class="image-container"><img src="${s}" loading="lazy"></div>`).join('')}</div><button id="snBtn" class="btn-audio ripple-host" style="margin-top:12px;">${t('next')} →</button>`;
   } else if(step.type==='quiz'){
-    html=`<div class="med-title">📝 Осмысление</div><div class="med-sub">${txt(step.text)}</div>${(step.questions||[]).map((q,i)=>`<div class="quiz-question">${i+1}. ${q}</div>`).join('')}<button id="snBtn" class="btn-audio ripple-host">${t('answer')}</button>`;
+    html=`<div class="med-title">${currentLang==='ru'?'📝 Осмысление':'📝 Reflection'}</div><div class="med-sub">${txt(step.text)}</div>${(step.questions||[]).map((q,i)=>`<div class="quiz-question">${i+1}. ${q}</div>`).join('')}<button id="snBtn" class="btn-audio ripple-host">${t('answer')}</button>`;
   } else if(step.type==='next_key_prompt'){
     const nk=step.nextKey,p=userStatus[nk];
-    const price=nk==='key3'?(currentLang==='ru'?'1390 ₽':'$19'):(nk==='key4'?(currentLang==='ru'?'1890 ₽':'$25'):(currentLang==='ru'?'890 ₽':'$12'));
     if(p) html=`<div class="med-title">🔓 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBtn" class="btn-audio ripple-host">${t('goToKey')}</button>`;
-    else html=`<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBuyBtn" class="btn-audio ripple-host">${t('buy')} (${price})</button>`;
+    else html=`<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBuyBtn" class="btn-audio ripple-host">${currentLang==='ru'?'💳 Открыть все ключи — 990 ₽':'💳 Get all keys — $11'}</button>`;
     html+=`<button id="snHomeBtn" class="back-home ripple-host">← ${t('toHome')}</button>`;
   } else if(step.type==='bonus_pdf'){
     html=`<div class="med-title">📘 Бонус</div><div class="med-sub">${txt(step.text)}</div><a href="${step.pdf}" target="_blank" class="btn-audio ripple-host" style="display:inline-block">${step.btnText}</a><button id="snBtn" class="btn-audio ripple-host">${t('next')}</button>`;
@@ -669,20 +667,20 @@ function renderStepWithFullscreen(step,nextCb,backCb,homeCb,startCb){
   document.getElementById('snHome')?.addEventListener('click',()=>{stopActiveAudio();homeCb();});
   if(step.type==='next_key_prompt'){
     if(userStatus[step.nextKey]) document.getElementById('nkBtn')?.addEventListener('click',()=>openKeyContent(step.nextKey));
-    else document.getElementById('nkBuyBtn')?.addEventListener('click',()=>{openLink(TRIBUTE_LINKS[step.nextKey]);setTimeout(loadUserStatus,2000);});
+    else document.getElementById('nkBuyBtn')?.addEventListener('click',()=>{openLink(TRIBUTE_LINKS.all);setTimeout(loadUserStatus,2000);});
     document.getElementById('snHomeBtn')?.addEventListener('click',homeCb);
   }
   if(step.type==='images_with_text'){
     const sb=document.getElementById('showImgsBtn'),hd=document.getElementById('hiddenImgs');
-    sb?.addEventListener('click',()=>{ if(hd.style.display==='none'){hd.style.display='block';sb.textContent=currentLang==='ru'?'Скрыть':'Hide';}else{hd.style.display='none';sb.textContent=step.btnText||'Показать';} });
+    sb?.addEventListener('click',()=>{ if(hd.style.display==='none'){hd.style.display='block';sb.textContent=currentLang==='ru'?'Скрыть':'Hide';}else{hd.style.display='none';sb.textContent=step.btnText||(currentLang==='ru'?'Показать':'Show');} });
   }
   document.getElementById('bpBtn')?.addEventListener('click',e=>{e.preventDefault();showBonusPodcast();});
 }
 
 async function openKeyContent(keyId){
-  if(!userStatus[keyId]){showError('Доступ не оплачен.');return;}
+  if(!userStatus[keyId]){showError(currentLang==='ru'?'Доступ не оплачен.':'Access not purchased.');return;}
   const panel=document.getElementById('dynamicPanel');
-  panel.innerHTML=`<div class="meditation-card" style="margin-top:60px;text-align:center;"><div class="loading-spinner"></div> Загрузка...</div>`;
+  panel.innerHTML=`<div class="meditation-card" style="margin-top:60px;text-align:center;"><div class="loading-spinner"></div> ${currentLang==='ru'?'Загрузка...':'Loading...'}</div>`;
   panel.classList.remove('hidden'); document.getElementById('homeScreen').classList.add('hidden');
   try{
     const webApp=window.Telegram?.WebApp;
@@ -694,7 +692,7 @@ async function openKeyContent(keyId){
     currentContent=content; currentStepIndex=0; stepHistory=[];
     if(content.steps[0]?.type==='welcome'&&welcomeShown[keyId]) currentStepIndex=1;
     renderCurrentStep();
-  }catch(e){console.error(e);showError('Ошибка загрузки контента.');loadUserStatus();}
+  }catch(e){console.error(e);showError(currentLang==='ru'?'Ошибка загрузки контента.':'Content load error.');loadUserStatus();}
 }
 
 function renderCurrentStep(){
@@ -727,8 +725,8 @@ document.querySelectorAll('.key-card').forEach(card=>{
       if(userStatus[key]) openKeyContent(key);
       else{
         const prices={key2:currentLang==='ru'?'890 ₽':'$12',key3:currentLang==='ru'?'1390 ₽':'$19',key4:currentLang==='ru'?'1890 ₽':'$25'};
-        if(confirm(`${key.toUpperCase()} — ${prices[key]}\n${currentLang==='ru'?'Оплатить через Tribute?':'Pay via Tribute?'}`)){
-          openLink(TRIBUTE_LINKS[key]); setTimeout(loadUserStatus,2000);
+        if(confirm(`${currentLang==='ru'?'Открыть все 3 ключа за 990 ₽?':'Get all 3 keys for $11?'}`)){
+          openLink(TRIBUTE_LINKS.all); setTimeout(loadUserStatus,2000);
         }
       }
     });
