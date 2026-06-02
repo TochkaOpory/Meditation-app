@@ -31,65 +31,6 @@ const TRIBUTE_LINKS = {
 const AUDIO_URLS = { bonus: 'https://files.catbox.moe/mhz6kz.mp3' };
 const BOT_USERNAME = 'Tochkaopoypraktikbot';
 
-// ======================== СЧЁТЧИК ПРОДАЖ «5 ВРАТ» ========================
-const PROMO_LIMIT = 100;
-const PROMO_PRICE_RU = '990 ₽';
-const PROMO_PRICE_EN = '$11';
-const REGULAR_PRICE_RU = '2990 ₽';
-const REGULAR_PRICE_EN = '$33';
-
-let promoSalesCount = 0;
-let promoActive = true;
-
-async function loadPromoCounter() {
-  try {
-    const resp = await fetch(`${WORKER_URL}/promo-counter`);
-    if (resp.ok) {
-      const d = await resp.json();
-      promoSalesCount = d.count || 0;
-      promoActive = promoSalesCount < PROMO_LIMIT;
-    }
-  } catch(e) {
-    promoSalesCount = parseInt(localStorage.getItem('promo_sales_count') || '0');
-    promoActive = promoSalesCount < PROMO_LIMIT;
-  }
-  updatePromoPriceUI();
-}
-
-function getCurrentAllPrice(lang) {
-  if (promoActive) return lang === 'en' ? PROMO_PRICE_EN : PROMO_PRICE_RU;
-  return lang === 'en' ? REGULAR_PRICE_EN : REGULAR_PRICE_RU;
-}
-
-function getPromoNote(lang) {
-  if (promoActive) {
-    const left = PROMO_LIMIT - promoSalesCount;
-    if (lang === 'en') return `🔥 Special offer for first 100 users — only ${left} spots left! Price returns to ${REGULAR_PRICE_EN}.`;
-    return `🔥 Специальная цена для первых 100 пользователей — осталось ${left} мест! После цена вернётся на ${REGULAR_PRICE_RU}.`;
-  } else {
-    if (lang === 'en') return `ℹ️ Promo ended. Regular price ${REGULAR_PRICE_EN}.`;
-    return `ℹ️ Акция завершена. Действует стандартная цена ${REGULAR_PRICE_RU}.`;
-  }
-}
-
-function updatePromoPriceUI() {
-  const allPriceSpan = document.getElementById('allPriceSpan');
-  if (allPriceSpan) allPriceSpan.innerText = getCurrentAllPrice(currentLang);
-  let noteEl = document.getElementById('promoNote');
-  if (!noteEl) {
-    noteEl = document.createElement('div');
-    noteEl.id = 'promoNote';
-    noteEl.style.cssText = 'font-size:12px;color:var(--gold);text-align:center;margin:-6px 0 10px;line-height:1.5;padding:0 4px;';
-    const buyAllBtn = document.getElementById('buyAllBtn');
-    if (buyAllBtn && buyAllBtn.parentNode) {
-      buyAllBtn.parentNode.insertBefore(noteEl, buyAllBtn.nextSibling);
-    }
-  }
-  noteEl.innerText = getPromoNote(currentLang);
-}
-
-
-
 let userStatus = {key2:false,key3:false,key4:false};
 let completed = {key2:false,key3:false};
 let welcomeShown = {key2:false,key3:false,key4:false};
@@ -102,7 +43,7 @@ let vratasOpen = false;
 const T = {
   ru: {
     tagline:'«Не волшебная таблетка, но близко к тому, чтобы ты проснулся»',
-    buyAllPrefix:'Получить все ключи (2+3+4)', get allPrice(){ return getCurrentAllPrice('ru'); },
+    buyAllPrefix:'Получить все ключи (2+3+4)', allPrice:'990 ₽',
     key2Title:'КЛЮЧ 2', key3Title:'КЛЮЧ 3', key4Title:'КЛЮЧ 4',
     key2Name:'Золотое сияние', key3Name:'Искусство быть', key4Name:'Субстрат жизненности',
     key2Price:'', key3Price:'', key4Price:'',
@@ -122,7 +63,7 @@ const T = {
   },
   en: {
     tagline:'"Not a magic pill, but close to waking you up"',
-    buyAllPrefix:'Get all keys (2+3+4)', get allPrice(){ return getCurrentAllPrice('en'); },
+    buyAllPrefix:'Get all keys (2+3+4)', allPrice:'$11',
     key2Title:'KEY 2', key3Title:'KEY 3', key4Title:'KEY 4',
     key2Name:'Golden Glow', key3Name:'The Art of Being', key4Name:'Substrate of Vitality',
     key2Price:'', key3Price:'', key4Price:'',
@@ -164,7 +105,6 @@ function updateUILanguage(){
   const vi = document.getElementById('vratasIntroText');
   if(vi) vi.innerText = t('vratasIntro');
   updateStatusUI();
-  updatePromoPriceUI();
 }
 
 function setLanguage(lang){
@@ -651,7 +591,7 @@ function renderFreeStep(){
   } else if(step.type==='next_key_prompt'){
     const nk=step.nextKey,purchased=userStatus[nk];
     if(purchased) html=`<div class="med-title">🔓 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBtn" class="btn-audio ripple-host">${t('goToKey')}</button>`;
-    else html=`<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBuyBtn" class="btn-audio ripple-host">${currentLang==='ru'?`💳 Открыть все ключи — ${getCurrentAllPrice('ru')}`:`💳 Get all keys — ${getCurrentAllPrice('en')}`}</button>`;
+    else html=`<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBuyBtn" class="btn-audio ripple-host">${currentLang==='ru'?'💳 Открыть все ключи — 990 ₽':'💳 Get all keys — $11'}</button>`;
     html+=`<button id="snHomeBtn" class="back-home ripple-host" style="margin-top:12px;">← ${t('toHome')}</button>`;
   }
   html+=`<div style="display:flex;justify-content:space-between;margin-top:22px;gap:8px;"><button id="snBack" class="back-home ripple-host">${t('back')}</button><button id="snStart" class="back-to-start ripple-host">${t('toStart')}</button><button id="snHome" class="back-home ripple-host">${t('toHome')}</button></div>`;
@@ -707,7 +647,7 @@ function renderStepWithFullscreen(step,nextCb,backCb,homeCb,startCb){
   } else if(step.type==='next_key_prompt'){
     const nk=step.nextKey,p=userStatus[nk];
     if(p) html=`<div class="med-title">🔓 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBtn" class="btn-audio ripple-host">${t('goToKey')}</button>`;
-    else html=`<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBuyBtn" class="btn-audio ripple-host">${currentLang==='ru'?`💳 Открыть все ключи — ${getCurrentAllPrice('ru')}`:`💳 Get all keys — ${getCurrentAllPrice('en')}`}</button>`;
+    else html=`<div class="med-title">🔒 Следующий ключ</div><div class="med-sub">${txt(step.description)}</div><button id="nkBuyBtn" class="btn-audio ripple-host">${currentLang==='ru'?'💳 Открыть все ключи — 990 ₽':'💳 Get all keys — $11'}</button>`;
     html+=`<button id="snHomeBtn" class="back-home ripple-host">← ${t('toHome')}</button>`;
   } else if(step.type==='bonus_pdf'){
     html=`<div class="med-title">📘 Бонус</div><div class="med-sub">${txt(step.text)}</div><a href="${step.pdf}" target="_blank" class="btn-audio ripple-host" style="display:inline-block">${step.btnText}</a><button id="snBtn" class="btn-audio ripple-host">${t('next')}</button>`;
@@ -785,7 +725,7 @@ document.querySelectorAll('.key-card').forEach(card=>{
       if(userStatus[key]) openKeyContent(key);
       else{
         const prices={key2:currentLang==='ru'?'890 ₽':'$12',key3:currentLang==='ru'?'1390 ₽':'$19',key4:currentLang==='ru'?'1890 ₽':'$25'};
-        if(confirm(currentLang==='ru'?`Открыть все 3 ключа за ${getCurrentAllPrice('ru')}?`:`Get all 3 keys for ${getCurrentAllPrice('en')}?`)){
+        if(confirm(`${currentLang==='ru'?'Открыть все 3 ключа за 990 ₽?':'Get all 3 keys for $11?'}`)){
           openLink(TRIBUTE_LINKS.all); setTimeout(loadUserStatus,2000);
         }
       }
@@ -808,7 +748,6 @@ function initApp(){
       btn.classList.toggle('active', btn.getAttribute('data-lang')===currentLang);
     });
     updateUILanguage();
-    loadPromoCounter();
     loadUserStatus().finally(()=>{ hideLoadingScreen(); });
   } else {
     setTimeout(initApp,100);
