@@ -405,20 +405,52 @@ function openNeuroSection(){
   diagBtn.style.marginTop='20px';
   diagBtn.innerHTML=`🔍 <span>${t('btnDiagnostics')}</span>`;
   diagBtn.addEventListener('click',()=>{
+    // Удаляем старое модальное окно если есть
+    const existing=document.getElementById('diagModalOverlay');
+    if(existing) existing.remove();
+
     const overlay=document.createElement('div');
-    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px);';
+    overlay.id='diagModalOverlay';
+    // position:fixed + top/left/right/bottom вместо inset — для совместимости с мобильным Telegram
+    overlay.style.cssText=[
+      'position:fixed',
+      'top:0','left:0','right:0','bottom:0',
+      'background:rgba(15,12,8,0.85)',
+      'z-index:99999',
+      'display:flex',
+      'align-items:center',
+      'justify-content:center',
+      'padding:20px',
+      '-webkit-overflow-scrolling:touch'
+    ].join(';');
+
     const box=document.createElement('div');
-    box.style.cssText='background:var(--surface);border-radius:24px;padding:32px 24px 28px;max-width:340px;width:100%;text-align:center;border:1px solid rgba(212,175,55,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.5);';
-    box.innerHTML=`
-      <div style="font-size:36px;margin-bottom:14px;">🔍</div>
-      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold);margin-bottom:14px;line-height:1.3;">Предварительная<br>диагностика</div>
-      <div style="font-size:14px;color:var(--ink-2);line-height:1.7;margin-bottom:6px;">Закрой приложение и напиши в боте слово:</div>
-      <div style="font-size:30px;font-weight:700;color:var(--gold);letter-spacing:4px;margin:14px 0;font-family:'Jost',sans-serif;">СДВИГ</div>
-      <div style="font-size:13px;color:var(--ink-2);line-height:1.75;margin-bottom:24px;">Мы пройдём предварительную диагностику — и после подберём удобное время для личной встречи.<br><br><span style="color:var(--gold);font-style:italic;">Бесплатно · Без обязательств</span></div>
-      <button id="diagClose" style="width:100%;padding:14px;background:linear-gradient(135deg,#d4af37,#b8860b);color:#1a1206;font-size:14px;font-weight:600;border:none;border-radius:14px;cursor:pointer;letter-spacing:0.5px;">Понятно</button>
-    `;
+    // Явные цвета без CSS-переменных — гарантированно видно на всех устройствах
+    box.style.cssText=[
+      'background:#FAF8F3',
+      'border-radius:22px',
+      'padding:30px 22px 26px',
+      'max-width:320px',
+      'width:100%',
+      'text-align:center',
+      'border:1px solid rgba(201,168,76,0.4)',
+      'box-shadow:0 20px 60px rgba(0,0,0,0.6)',
+      'position:relative'
+    ].join(';');
+
+    box.innerHTML=
+      '<div style="font-size:38px;margin-bottom:12px;">🔍</div>'+
+      '<div style="font-family:Cormorant Garamond,serif;font-size:21px;font-weight:600;color:#C9A84C;margin-bottom:12px;line-height:1.35;">Предварительная диагностика</div>'+
+      '<div style="width:40px;height:1px;background:#C9A84C;margin:0 auto 16px;opacity:0.5;"></div>'+
+      '<div style="font-size:14px;color:#3D3A31;line-height:1.7;margin-bottom:4px;">Закрой приложение и напиши в боте слово:</div>'+
+      '<div style="font-size:32px;font-weight:700;color:#C9A84C;letter-spacing:5px;margin:14px 0;font-family:Jost,sans-serif;">СДВИГ</div>'+
+      '<div style="font-size:13px;color:#3D3A31;line-height:1.75;margin-bottom:6px;">Мы проведём предварительную диагностику — и подберём удобное время для личной встречи.</div>'+
+      '<div style="font-size:13px;color:#C9A84C;font-style:italic;margin-bottom:22px;">Бесплатно · Без обязательств</div>'+
+      '<button id="diagClose" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A84C,#9a6f1e);color:#1C1A15;font-size:14px;font-weight:600;border:none;border-radius:13px;cursor:pointer;font-family:Jost,sans-serif;letter-spacing:0.5px;">Понятно</button>';
+
     overlay.appendChild(box);
     document.body.appendChild(overlay);
+
     document.getElementById('diagClose').addEventListener('click',()=>overlay.remove());
     overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
   });
