@@ -405,12 +405,22 @@ function openNeuroSection(){
   diagBtn.style.marginTop='20px';
   diagBtn.innerHTML=`🔍 <span>${t('btnDiagnostics')}</span>`;
   diagBtn.addEventListener('click',()=>{
-    // Отправляем слово СДВИГ в бот
-    if(window.Telegram?.WebApp){
-      window.Telegram.WebApp.openTelegramLink(`https://t.me/${BOT_USERNAME}?start=startdiognostika`);
-    } else {
-      openLink(`https://t.me/${BOT_USERNAME}?start=startdiognostika`);
-    }
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px);';
+    const box=document.createElement('div');
+    box.style.cssText='background:var(--surface);border-radius:24px;padding:32px 24px 28px;max-width:340px;width:100%;text-align:center;border:1px solid rgba(212,175,55,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.5);';
+    box.innerHTML=`
+      <div style="font-size:36px;margin-bottom:14px;">🔍</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold);margin-bottom:14px;line-height:1.3;">Предварительная<br>диагностика</div>
+      <div style="font-size:14px;color:var(--ink-2);line-height:1.7;margin-bottom:6px;">Закрой приложение и напиши в боте слово:</div>
+      <div style="font-size:30px;font-weight:700;color:var(--gold);letter-spacing:4px;margin:14px 0;font-family:'Jost',sans-serif;">СДВИГ</div>
+      <div style="font-size:13px;color:var(--ink-2);line-height:1.75;margin-bottom:24px;">Мы пройдём предварительную диагностику — и после подберём удобное время для личной встречи.<br><br><span style="color:var(--gold);font-style:italic;">Бесплатно · Без обязательств</span></div>
+      <button id="diagClose" style="width:100%;padding:14px;background:linear-gradient(135deg,#d4af37,#b8860b);color:#1a1206;font-size:14px;font-weight:600;border:none;border-radius:14px;cursor:pointer;letter-spacing:0.5px;">Понятно</button>
+    `;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    document.getElementById('diagClose').addEventListener('click',()=>overlay.remove());
+    overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
   });
   wrap.appendChild(diagBtn);
 
