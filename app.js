@@ -43,7 +43,7 @@ let vratasOpen = false;
 const T = {
   ru: {
     tagline:'«Не волшебная таблетка, но близко к тому, чтобы ты проснулся»',
-    buyAllPrefix:'Получить все ключи (2+3+4)', allPrice:'990 ₽',
+    buyAllPrefix:'Получить все ключи (2+3+4)', allPrice:'4990 ₽',
     key2Title:'КЛЮЧ 2', key3Title:'КЛЮЧ 3', key4Title:'КЛЮЧ 4',
     key2Name:'Золотое сияние', key3Name:'Искусство быть', key4Name:'Субстрат жизненности',
     key2Price:'', key3Price:'', key4Price:'',
